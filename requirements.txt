@@ -8,7 +8,7 @@ email-validator
 bcrypt
 pdfplumber
 reportlab
-genai
+google-genai
 python-dotenv
 gunicorn
 mistune
