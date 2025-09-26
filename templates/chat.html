@@ -1,0 +1,669 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ chat.name }} - Chat{% endblock %}
+
+{% block content %}
+<style>
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    height: 100vh;
+    overflow-y: auto;
+    padding-bottom: 100px;
+  }
+
+  .sidebar {
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  #chat-main {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #chat-history {
+    height: calc(100% - 100px);
+    overflow: hidden;
+  }
+</style>
+<div class="container-fluid">
+  <div class="row">
+
+    <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse bg-dark text-white" id="sidebarMenu"
+      style="min-height: 100vh;">
+      <div class="position-sticky">
+        <div class="d-flex justify-content-between align-items-center px-3 pb-3 border-bottom border-secondary">
+          <span class="fs-5 fw-bold">Chats</span>
+          <a href="{{ url_for('new_chat') }}" class="btn btn-outline-light btn-sm" title="New Chat">
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+
+        <form class="p-3" id="search-form" action="javascript:void(0);">
+          <div class="input-group rounded-3 shadow-sm overflow-hidden">
+            <input type="text" class="form-control border-0" id="search-input" placeholder="Search chats..."
+              aria-label="Search chats" style="background-color: #2c2f33; color: #fff;">
+            <button class="btn btn-outline-secondary border-0" type="button" id="clear-search"
+              style="background-color: #2c2f33;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </form>
+
+        <ul class="nav flex-column px-2" id="chat-list">
+          {% for c in chats %}
+          <li class="nav-item mb-2">
+            <a class="nav-link d-flex justify-content-between align-items-start rounded-3 px-3 py-2 
+                  {% if c.id == chat.id %} bg-click text-white{% else %}text-white-50{% endif %}"
+              href="{{ url_for('chat_view', chat_id=c.id) }}" style="transition: all 0.2s;">
+              <div>
+                <div class="fw-bold">{{ c.name }}</div>
+                <small class="text-white">{{ c.messages[-1].content[:30] if c.messages else 'No messages yet' }}</small>
+              </div>
+            </a>
+            {% if current_user.id == c.owner_id %}
+            <div class="d-flex align-items-center">
+              <a href="javascript:void(0);" class="text-light me-2 rename-chat" data-id="{{ c.id }}" title="Rename">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="javascript:void(0);" class="text-danger me-2 delete-chat" data-id="{{ c.id }}" title="Delete">
+                <i class="fas fa-trash"></i>
+              </a>
+              <a href="{{ url_for('export_chat', chat_id=c.id) }}" class="text-success export-chat" title="Export">
+                <i class="fas fa-file-export"></i>
+              </a>
+
+            </div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </nav>
+
+    <style>
+      #chat-list .nav-link:hover {
+        background-color: #343a40 !important;
+        color: #fff !important;
+      }
+
+      #chat-list .nav-link.bg-primary {
+        background-color: #0d6efd !important;
+        color: #fff !important;
+      }
+
+      #search-form .form-control::placeholder {
+        color: #bbb;
+      }
+
+      .rename-chat:hover,
+      .delete-chat:hover {
+        transform: scale(1.1);
+        transition: transform 0.2s;
+      }
+    </style>
+
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column" id="chat-main">
+      <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+        <h4 class="mb-0">{{ chat.name }}</h4>
+        <div>
+          <button class="btn btn-sm btn-outline-primary d-md-none me-2" type="button" data-bs-toggle="collapse"
+            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <a href="{{ url_for('invite_user', chat_id=chat.id) }}" class="btn btn-sm btn-outline-primary me-2"
+            title="Invite Participants"><i class="fas fa-user-plus"></i></a>
+          <a href="{{ url_for('export_chat', chat_id=chat.id) }}" class="btn btn-sm btn-outline-success me-2"
+            title="Export Chat">
+            <i class="fas fa-file-export"></i>
+          </a>
+
+          {% if participant.role == 'owner' %}
+          <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#renameModal"><i
+              class="fas fa-pen"></i></button>
+          {% endif %}
+        </div>
+      </div>
+      <div id="chat-history" class="chat-history p-3 my-3"
+        style="height: 70%; overflow-y: auto; background: #f8f9fa; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+        {% for msg in messages %}
+        <div class="d-flex mb-3 {{ 'justify-content-end' if msg.role=='user' else 'justify-content-start' }}">
+          <div class="p-3 rounded shadow-sm {{ 'bg-primary text-white' if msg.role=='user' else 'bg-light text-dark' }}"
+            style="max-width: 100%;">
+
+            {% if msg.content %}
+            <p class="mb-1 markdown-message" data-content="{{ msg.content|replace('"', ' &quot;')|replace("'", "&#39;" )
+              }}"></p>
+            {% endif %}
+
+            <script>
+              document.querySelectorAll('.markdown-message').forEach(container => {
+                const md = container.dataset.content;
+                container.innerHTML = marked.parse(md);
+              });
+            </script>
+
+            {% if msg.role != 'user' %}
+            <div class="msg-actions mt-2 d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-link text-decoration-none btn-copy" title="Copy"
+                aria-label="Copy">
+                <i class="fas fa-copy"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-link text-decoration-none btn-tts" title="Listen"
+                aria-label="Listen" data-state="idle">
+                <i class="fas fa-volume-up"></i>
+              </button>
+            </div>
+            {% endif %}
+
+            {% if msg.file_path %}
+            {% set files = msg.file_path.split(',') %}
+            <div class="mt-2 att-grid">
+              {% for f in files %}
+              {% set href = url_for('static', filename='uploads/' + f) %}
+              {% if f.lower().endswith(('.png','.jpg','.jpeg','.gif','.webp','.bmp','.svg')) %}
+              <a href="{{ href }}" target="_blank" class="att att-img">
+                <img src="{{ href }}" alt="{{ f }}" loading="lazy">
+              </a>
+              {% elif f.lower().endswith('.pdf') %}
+              <a href="{{ href }}" target="_blank" class="att att-pdf">📄 {{ f }}</a>
+              {% else %}
+              <a href="{{ href }}" target="_blank" class="att att-file">📎 {{ f }}</a>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <small class="text-muted d-block text-end mt-1" style="font-size: 0.7rem;">
+              {% if msg.created_at %}{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}&nbsp;{% endif %}
+            </small>
+
+          </div>
+        </div>
+        {% endfor %}
+        <div id="loading-spinner" class="loading-spinner"></div>
+        <div id="pre-send-preview" class="mb-3"></div>
+      </div>
+
+      <form id="chat-form" action="{{ url_for('send_message', chat_id=chat.id) }}" method="post"
+        enctype="multipart/form-data" class="input-group mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" id="message-input" name="message" class="form-control" placeholder="Type your message..."
+          autocomplete="off" />
+        <label class="btn btn-outline-secondary custom-file-input mb-0">
+          <i class="fas fa-paperclip"></i>
+          <input type="file" id="file-input" name="files" multiple />
+        </label>
+        <button type="button" id="mic-btn" class="btn btn-outline-secondary" title="Speak">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+      </form>
+    </main>
+  </div>
+</div>
+
+<div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="renameModalLabel">Rename Chat</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="rename-form" action="{{ url_for('rename_chat', chat_id=chat.id) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label for="new-name" class="form-label">New name</label>
+            <input type="text" class="form-control" id="new-name" name="name" value="{{ chat.name }}" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Rename</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const chatHistory = document.getElementById('chat-history');
+
+    async function copyTextFromBubble(btn) {
+      const bubble = btn.closest('.shadow-sm, .chat-bubble') || btn.closest('div');
+      if (!bubble) return;
+
+      const ps = bubble.querySelectorAll('p');
+      let text = '';
+      if (ps.length) {
+        text = Array.from(ps).map(p => p.textContent.trim()).filter(Boolean).join('\n');
+      } else {
+        const clone = bubble.cloneNode(true);
+        clone.querySelectorAll('.msg-actions, small').forEach(el => el.remove());
+        text = (clone.textContent || '').trim();
+      }
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => (btn.innerHTML = '<i class="fas fa-copy"></i>'), 1200);
+      } catch (e) {
+        console.warn('Clipboard error:', e);
+        alert('Copy failed');
+      }
+    }
+
+    const synth = window.speechSynthesis;
+    let currentBtn = null;
+    let currentUtter = null;
+
+    const LANG_PREFS = ['en-IN', 'hi-IN', 'en-US', 'en-GB'];
+
+    function pickVoice() {
+      const voices = synth.getVoices() || [];
+      for (const pref of LANG_PREFS) {
+        const v = voices.find(v => (v.lang || '').toLowerCase().startsWith(pref.toLowerCase()));
+        if (v) return v;
+      }
+      return voices[0] || null;
+    }
+
+    function getBubbleText(btn) {
+      const bubble = btn.closest('.shadow-sm, .chat-bubble') || btn.closest('div');
+      if (!bubble) return '';
+      const ps = bubble.querySelectorAll('p');
+      if (ps.length) return Array.from(ps).map(p => p.textContent.trim()).filter(Boolean).join('\n');
+      const clone = bubble.cloneNode(true);
+      clone.querySelectorAll('.msg-actions, small').forEach(el => el.remove());
+      return (clone.textContent || '').trim();
+    }
+
+    function setBtnState(btn, state) {
+      btn.setAttribute('data-state', state);
+      if (state === 'playing') {
+        btn.title = 'Stop';
+        btn.innerHTML = '<i class="fas fa-stop"></i>';
+      } else {
+        btn.title = 'Listen';
+        btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+      }
+    }
+
+    function stopSpeech() {
+      if (synth && synth.speaking) synth.cancel();
+      if (currentBtn) setBtnState(currentBtn, 'idle');
+      currentBtn = null;
+      currentUtter = null;
+    }
+
+    function speak(btn) {
+      const text = getBubbleText(btn);
+      if (!text) return;
+
+      stopSpeech();
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1;
+      utter.pitch = 1;
+      utter.volume = 1;
+      const voice = pickVoice();
+      if (voice) utter.voice = voice;
+
+      utter.onend = stopSpeech;
+      utter.onerror = stopSpeech;
+
+      currentBtn = btn;
+      currentUtter = utter;
+      setBtnState(btn, 'playing');
+      synth.speak(utter);
+    }
+
+    if (synth && typeof synth.onvoiceschanged !== 'undefined') {
+      synth.onvoiceschanged = () => { synth.getVoices(); };
+    }
+
+    chatHistory?.addEventListener('click', (e) => {
+      const copyBtn = e.target.closest('.btn-copy');
+      if (copyBtn) {
+        e.preventDefault();
+        copyTextFromBubble(copyBtn);
+        return;
+      }
+
+      const ttsBtn = e.target.closest('.btn-tts');
+      if (ttsBtn) {
+        e.preventDefault();
+        const state = ttsBtn.getAttribute('data-state') || 'idle';
+        if (state === 'playing') {
+          stopSpeech();
+        } else {
+          speak(ttsBtn);
+        }
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopSpeech();
+    });
+    window.addEventListener('beforeunload', stopSpeech);
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const micBtn = document.getElementById('mic-btn');
+    const input = document.getElementById('message-input');
+
+    if (!micBtn || !input) return;
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      micBtn.style.display = 'none';
+      return;
+    }
+
+    const recog = new SR();
+    recog.lang = 'en-IN';
+    recog.interimResults = true;
+    recog.maxAlternatives = 1;
+    let listening = false;
+    let committedText = '';
+
+    function start() {
+      try {
+        committedText = input.value;
+        recog.start();
+        listening = true;
+        micBtn.classList.add('recording');
+        micBtn.title = 'Listening... click to stop';
+      } catch (e) {
+      }
+    }
+    function stop() {
+      try { recog.stop(); } catch (e) { }
+      listening = false;
+      micBtn.classList.remove('recording');
+      micBtn.title = 'Speak';
+    }
+
+    micBtn.addEventListener('click', () => {
+      if (listening) stop(); else start();
+    });
+
+    recog.onresult = (ev) => {
+      let interim = '';
+      let finalChunk = '';
+
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const res = ev.results[i];
+        const txt = res[0].transcript.trim();
+        if (res.isFinal) finalChunk += (finalChunk ? ' ' : '') + txt;
+        else interim += (interim ? ' ' : '') + txt;
+      }
+
+      if (finalChunk) {
+        input.value = (committedText + ' ' + finalChunk).trim();
+        committedText = input.value;
+      } else if (interim) {
+        input.value = (committedText + ' ' + interim).trim();
+      }
+      input.focus();
+      input.selectionStart = input.selectionEnd = input.value.length;
+    };
+
+    recog.onerror = (e) => {
+      console.warn('Speech error:', e.error);
+      stop();
+    };
+
+    recog.onend = () => {
+      stop();
+    };
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('file-input');
+    const previewWrap = document.getElementById('pre-send-preview');
+
+    if (!fileInput || !previewWrap) return;
+
+    const isImage = window.__isImage || ((name) => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name));
+    const isPDF = window.__isPDF || ((name) => /\.pdf$/i.test(name));
+    window.__isImage = isImage;
+    window.__isPDF = isPDF;
+
+    fileInput.addEventListener('change', () => {
+      previewWrap.innerHTML = '';
+
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) return;
+
+      const grid = document.createElement('div');
+      grid.className = 'att-grid';
+
+      files.forEach((f) => {
+        const name = f.name || 'file';
+        if (isImage(name)) {
+          const card = document.createElement('div');
+          card.className = 'att att-img';
+
+          const img = document.createElement('img');
+          img.alt = name;
+          img.src = URL.createObjectURL(f);
+          img.onload = () => URL.revokeObjectURL(img.src);
+
+          card.appendChild(img);
+          grid.appendChild(card);
+          return;
+        }
+
+        if (isPDF(name)) {
+          const chip = document.createElement('span');
+          chip.className = 'att att-pdf';
+          chip.textContent = '📄 ' + name;
+          grid.appendChild(chip);
+          return;
+        }
+
+        const chip = document.createElement('span');
+        chip.className = 'att att-file';
+        chip.textContent = '📎 ' + name;
+        grid.appendChild(chip);
+      });
+
+      previewWrap.appendChild(grid);
+
+    });
+  });
+</script>
+
+<script>
+  const UPLOAD_BASE = "{{ url_for('static', filename='uploads/') }}";
+
+  function fileUrl(name) {
+    return UPLOAD_BASE + name.trim();
+  }
+
+  function isImage(name) {
+    return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
+  }
+
+  function isPDF(name) {
+    return /\.pdf$/i.test(name);
+  }
+
+  function renderAttachmentGallery(container, fileNames) {
+    container.innerHTML = '';
+    if (!fileNames || !fileNames.length) return;
+
+    const grid = document.createElement('div');
+    grid.className = 'att-grid';
+
+    fileNames.forEach((fname) => {
+      const url = fileUrl(fname);
+      if (isImage(fname)) {
+        const card = document.createElement('a');
+        card.href = url; card.target = '_blank'; card.rel = 'noopener';
+        card.className = 'att att-img';
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.src = url;
+        img.alt = fname;
+        card.appendChild(img);
+        grid.appendChild(card);
+      } else if (isPDF(fname)) {
+        const chip = document.createElement('a');
+        chip.href = url; chip.target = '_blank'; chip.rel = 'noopener';
+        chip.className = 'att att-pdf';
+        chip.innerHTML = '📄 ' + fname.replace(/^\w{8,}_(?=\w)/, '');
+        grid.appendChild(chip);
+      } else {
+        const link = document.createElement('a');
+        link.href = url; link.target = '_blank'; link.rel = 'noopener';
+        link.className = 'att att-file';
+        link.textContent = '📎 ' + fname;
+        grid.appendChild(link);
+      }
+    });
+
+    container.appendChild(grid);
+  }
+</script>
+<script>
+  const previewWrap = document.getElementById('pre-send-preview');
+  fileInput?.addEventListener('change', () => {
+    if (!fileInput.files.length) { previewWrap.innerHTML = ''; return; }
+    const grid = document.createElement('div');
+    grid.className = 'att-grid';
+
+    [...fileInput.files].forEach((f) => {
+      const name = f.name;
+      if (isImage(name)) {
+        const card = document.createElement('div');
+        card.className = 'att att-img';
+        const img = document.createElement('img');
+        img.alt = name;
+        img.src = URL.createObjectURL(f);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        card.appendChild(img);
+        grid.appendChild(card);
+      } else if (isPDF(name)) {
+        const chip = document.createElement('span');
+        chip.className = 'att att-pdf';
+        chip.textContent = '📄 ' + name;
+        grid.appendChild(chip);
+      } else {
+        const chip = document.createElement('span');
+        chip.className = 'att att-file';
+        chip.textContent = '📎 ' + name;
+        grid.appendChild(chip);
+      }
+    });
+
+    previewWrap.innerHTML = '';
+    previewWrap.appendChild(grid);
+  });
+</script>
+
+<script>
+  document.getElementById('rename-form')?.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.elements['name'].value.trim();
+    if (!name) return;
+    try {
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': form.querySelector('[name=csrf_token]').value
+        },
+        body: new URLSearchParams({ name })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        location.reload();
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to rename chat');
+    }
+  });
+
+  document.querySelectorAll('.rename-chat').forEach(function (el) {
+    el.addEventListener('click', function () {
+      const chatId = this.dataset.id;
+      const modal = new bootstrap.Modal(document.getElementById('renameModal'));
+      document.getElementById('rename-form').action = `/chat/rename/${chatId}`;
+      modal.show();
+    });
+  });
+  document.querySelectorAll('.delete-chat').forEach(function (el) {
+    el.addEventListener('click', async function () {
+      const chatId = this.dataset.id;
+      if (!confirm('Are you sure you want to delete this chat?')) return;
+      try {
+        const resp = await fetch(`/chat/delete/${chatId}`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+        });
+        const data = await resp.json();
+        if (data.success) {
+          location.href = '{{ url_for('dashboard') }}';
+        } else if (data.error) {
+          alert(data.error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to delete chat');
+      }
+    });
+  });
+
+  const searchInput = document.getElementById('search-input');
+  const clearSearch = document.getElementById('clear-search');
+  searchInput?.addEventListener('input', async function () {
+    const query = this.value.trim();
+    const list = document.getElementById('chat-list');
+    if (!query) {
+      list.querySelectorAll('li').forEach(li => li.style.display = 'block');
+      return;
+    }
+    try {
+      const res = await fetch(`/chat/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      const ids = data.chats ? data.chats.map(c => c.id.toString()) : [];
+      list.querySelectorAll('li').forEach(li => {
+        const link = li.querySelector('a');
+        const cid = link.getAttribute('href').split('/').pop();
+        li.style.display = ids.includes(cid) ? 'block' : 'none';
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  });
+  clearSearch?.addEventListener('click', function () {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+  });
+</script>
+{% endblock %}

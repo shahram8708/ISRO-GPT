@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - ISRO-GPT{% endblock %}
+
+{% block content %}
+<div class="container-fluid vh-100 bg-light py-5">
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-4">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="bg-gradient-primary text-center py-4">
+          <div class="mb-3">
+            <i class="fas fa-sign-in-alt fa-2x text-white opacity-90"></i>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0">Welcome Back</h2>
+          <p class="text-white opacity-75 mb-0 mt-2">Sign in to your account</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <form method="post" novalidate class="needs-validation">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-4">
+              <div class="form-floating">
+                {{ form.email(class="form-control rounded-3", placeholder="email@example.com", autofocus=True) }}
+                {{ form.email.label(class="form-label") }}
+              </div>
+              {% for error in form.email.errors %}
+              <div class="d-flex align-items-center mt-2">
+                <i class="fas fa-exclamation-circle text-danger me-2 small"></i>
+                <small class="text-danger">{{ error }}</small>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-4">
+              <div class="form-floating">
+                {{ form.password(class="form-control rounded-3", placeholder="password") }}
+                {{ form.password.label(class="form-label") }}
+              </div>
+              {% for error in form.password.errors %}
+              <div class="d-flex align-items-center mt-2">
+                <i class="fas fa-exclamation-circle text-danger me-2 small"></i>
+                <small class="text-danger">{{ error }}</small>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="form-check">
+                {{ form.remember(class="form-check-input rounded-1") }}
+                {{ form.remember.label(class="form-check-label text-muted small fw-medium") }}
+              </div>
+              <a href="#" class="text-decoration-none small text-primary fw-medium">Forgot password?</a>
+            </div>
+
+            <div class="d-grid mb-4">
+              {{ form.submit(class="btn btn-primary btn-lg rounded-3 fw-semibold py-3") }}
+            </div>
+
+            <div class="text-center">
+              <p class="text-muted mb-0">
+                Don't have an account?
+                <a href="{{ url_for('register') }}" class="text-decoration-none fw-semibold text-primary">
+                  Create Account
+                </a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <small class="text-muted">
+          By signing in, you agree to our
+          <a href="#" class="text-decoration-none text-dark">Terms of Service</a> and
+          <a href="#" class="text-decoration-none text-dark">Privacy Policy</a>
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  }
+
+  .rounded-4 {
+    border-radius: 1rem !important;
+  }
+
+  .rounded-3 {
+    border-radius: 0.75rem !important;
+  }
+
+  .rounded-1 {
+    border-radius: 0.25rem !important;
+  }
+
+  .shadow-lg {
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.5rem 1.5rem rgba(13, 110, 253, 0.3) !important;
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .form-control {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+  }
+
+  .form-floating>.form-control:focus~label,
+  .form-floating>.form-control:not(:placeholder-shown)~label {
+    color: #0d6efd;
+    font-weight: 500;
+  }
+
+  .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+
+  .form-check-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+
+  .text-danger {
+    font-size: 0.875rem;
+  }
+
+  .fa-exclamation-circle {
+    font-size: 0.75rem;
+  }
+
+  a.text-primary:hover {
+    color: #0a58ca !important;
+    text-decoration: underline !important;
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding: 1rem;
+    }
+
+    .card-body {
+      padding: 2rem 1.5rem !important;
+    }
+
+    .btn-lg {
+      padding: 0.875rem 1.5rem !important;
+    }
+
+    .bg-gradient-primary {
+      padding: 2rem 1rem !important;
+    }
+
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .col-12 {
+      padding: 0 0.5rem;
+    }
+  }
+
+  .form-floating>label {
+    color: #6c757d;
+    transition: all 0.2s ease;
+  }
+
+  * {
+    transition: color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .btn:focus,
+  .form-control:focus,
+  .form-check-input:focus {
+    outline: none;
+  }
+
+  .btn-loading {
+    position: relative;
+    color: transparent;
+  }
+
+  .btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const inputs = form.querySelectorAll('.form-control');
+
+    inputs.forEach(input => {
+      input.addEventListener('blur', function () {
+        if (this.value.trim() !== '') {
+          this.classList.add('is-valid');
+        } else {
+          this.classList.remove('is-valid');
+        }
+      });
+
+      input.addEventListener('input', function () {
+        this.classList.remove('is-invalid');
+      });
+    });
+
+    form.addEventListener('submit', function () {
+      submitBtn.classList.add('btn-loading');
+      submitBtn.disabled = true;
+    });
+
+    const card = document.querySelector('.card');
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+
+    setTimeout(() => {
+      card.style.transition = 'all 0.5s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, 100);
+  });
+</script>
+{% endblock %}

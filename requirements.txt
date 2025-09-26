@@ -1,0 +1,14 @@
+Flask
+Flask-Login
+Flask-WTF
+Flask-SQLAlchemy
+Flask-Migrate
+WTForms
+email-validator
+bcrypt
+pdfplumber
+reportlab
+google-generativeai
+python-dotenv
+gunicorn
+markdown

@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - ISRO-GPT{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h2 fw-bold text-dark mb-2">Admin Dashboard</h1>
+          <p class="lead text-muted mb-0">Overview of application usage and user management</p>
+        </div>
+        <a href="{{ url_for('admin_users') }}" class="btn btn-primary btn-lg px-4 rounded-3 fw-semibold shadow-sm">
+          <i class="fas fa-users-cog me-2"></i>Manage Users
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-5">
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card border-0 shadow-sm rounded-3 h-100 hover-lift">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+              <i class="fas fa-users fa-2x text-primary"></i>
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="card-title text-muted text-uppercase small fw-semibold mb-1">Total Users</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ user_count }}</h3>
+              <small class="text-success">
+                <i class="fas fa-arrow-up me-1"></i>
+                <span class="fw-semibold">Active</span>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card border-0 shadow-sm rounded-3 h-100 hover-lift">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
+              <i class="fas fa-comments fa-2x text-success"></i>
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="card-title text-muted text-uppercase small fw-semibold mb-1">Total Chats</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ chat_count }}</h3>
+              <small class="text-info">
+                <i class="fas fa-exchange-alt me-1"></i>
+                <span class="fw-semibold">Conversations</span>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card border-0 shadow-sm rounded-3 h-100 hover-lift">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="bg-info bg-opacity-10 rounded-3 p-3 me-3">
+              <i class="fas fa-envelope fa-2x text-info"></i>
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="card-title text-muted text-uppercase small fw-semibold mb-1">Total Messages</h6>
+              <h3 class="fw-bold text-dark mb-0">{{ message_count }}</h3>
+              <small class="text-warning">
+                <i class="fas fa-comment-dots me-1"></i>
+                <span class="fw-semibold">Exchanged</span>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom-0">
+          <h5 class="fw-semibold text-dark mb-0">Analytics Overview</h5>
+          <p class="text-muted small mb-0">Real-time statistics and platform usage</p>
+        </div>
+        <div class="card-body p-4">
+          <div class="chart-container" style="position: relative; height: 300px;">
+            <canvas id="analyticsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold text-dark mb-3">Quick Actions</h5>
+          <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+              <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary w-100 rounded-2 py-3">
+                <i class="fas fa-user-friends me-2"></i>User Management
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <a href="#" class="btn btn-outline-success w-100 rounded-2 py-3">
+                <i class="fas fa-chart-line me-2"></i>Advanced Analytics
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <a href="#" class="btn btn-outline-info w-100 rounded-2 py-3">
+                <i class="fas fa-cog me-2"></i>System Settings
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <a href="#" class="btn btn-outline-warning w-100 rounded-2 py-3">
+                <i class="fas fa-file-alt me-2"></i>Reports
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ctx = document.getElementById('analyticsChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Users', 'Chats', 'Messages'],
+        datasets: [{
+          label: 'Count',
+          data: [{{ user_count }}, {{ chat_count }}, {{ message_count }}],
+  backgroundColor: [
+    'rgba(13, 110, 253, 0.8)',
+    'rgba(25, 135, 84, 0.8)',
+    'rgba(13, 202, 240, 0.8)'
+  ],
+    borderColor: [
+      'rgba(13, 110, 253, 1)',
+      'rgba(25, 135, 84, 1)',
+      'rgba(13, 202, 240, 1)'
+    ],
+      borderWidth: 1,
+        borderRadius: 6,
+          borderSkipped: false,
+      }]
+    },
+  options: {
+    responsive: true,
+      maintainAspectRatio: false,
+        scales: {
+      y: {
+        beginAtZero: true,
+          grid: {
+          color: 'rgba(0, 0, 0, 0.05)'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          cornerRadius: 4,
+            padding: 12
+      }
+    }
+  }
+  });
+}
+</script>
+
+<style>
+  .hover-lift {
+    transition: all 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .rounded-3 {
+    border-radius: 0.75rem !important;
+  }
+
+  .rounded-2 {
+    border-radius: 0.5rem !important;
+  }
+
+  .shadow-sm {
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.075) !important;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.5rem 1rem rgba(13, 110, 253, 0.15) !important;
+  }
+
+  .bg-opacity-10 {
+    background-opacity: 0.1 !important;
+  }
+
+  .card-title {
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding: 1rem;
+    }
+
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+
+    .btn-lg {
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    .card-body {
+      padding: 1.5rem !important;
+    }
+
+    .row.g-3 {
+      margin: -0.5rem;
+    }
+
+    .row.g-3>[class*="col-"] {
+      padding: 0.5rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .h2 {
+      font-size: 1.5rem !important;
+    }
+
+    .lead {
+      font-size: 0.9rem !important;
+    }
+
+    .btn {
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  * {
+    transition: color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .chart-container {
+    min-height: 250px;
+  }
+
+  .btn-outline-primary:hover,
+  .btn-outline-success:hover,
+  .btn-outline-info:hover,
+  .btn-outline-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const cards = document.querySelectorAll('.hover-lift');
+    cards.forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+
+      setTimeout(() => {
+        card.style.transition = 'all 0.5s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 100 + (index * 100));
+    });
+  });
+</script>
+{% endblock %}
