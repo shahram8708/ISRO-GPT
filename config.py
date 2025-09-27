@@ -6,7 +6,7 @@ class Config:
     REMEMBER_COOKIE_DURATION = timedelta(days=30)  
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(__file__), 'app.db')}"
+        "DATABASE_URL", f"sqlite:///{os.path.join(os.path.dirname(__file__), 'isro-gpt.db')}"
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

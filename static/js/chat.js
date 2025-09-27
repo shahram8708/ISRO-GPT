@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const chatForm = document.getElementById('chat-form');
   const messageInput = document.getElementById('message-input');
   const chatHistory = document.getElementById('chat-history');
-  const loadingSpinner = document.getElementById('loading-spinner');
   const fileInput = document.getElementById('file-input');
   const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
 
@@ -93,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const text = messageInput.value.trim();
     if (!text && (!fileInput || !fileInput.files.length)) return;
 
-    if (loadingSpinner) loadingSpinner.style.display = 'block';
     if (sendBtn) sendBtn.disabled = true;
 
     const formData = new FormData();
@@ -101,6 +99,23 @@ document.addEventListener('DOMContentLoaded', function () {
     if (fileInput && fileInput.files.length) {
       for (const file of fileInput.files) formData.append('files', file);
     }
+
+    const thinkingId = `thinking-${Date.now()}`;
+    const thinkingWrapper = document.createElement('div');
+    thinkingWrapper.className = 'd-flex mb-3 justify-content-start';
+    thinkingWrapper.id = thinkingId;
+
+    const thinkingBubble = document.createElement('div');
+    thinkingBubble.className = 'p-3 rounded shadow-sm ai-thinking-bubble text-dark';
+    thinkingBubble.style.maxWidth = '70%';
+
+    thinkingBubble.innerHTML = `
+  <div style="font-weight:600; margin-bottom:6px;">Deep reasoning in progress <span class="ai-thinking-dots"></span></div>
+`;
+
+    thinkingWrapper.appendChild(thinkingBubble);
+    chatHistory.appendChild(thinkingWrapper);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
 
     try {
       const response = await fetch(chatForm.action, {
@@ -120,8 +135,9 @@ document.addEventListener('DOMContentLoaded', function () {
       console.error(err);
       alert('An error occurred while sending your message.');
     } finally {
-      if (loadingSpinner) loadingSpinner.style.display = 'none';
       if (sendBtn) sendBtn.disabled = false;
+      const existing = document.getElementById(thinkingId);
+      if (existing) existing.remove();
     }
   });
 

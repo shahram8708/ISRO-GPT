@@ -67,10 +67,11 @@ def create_app(config_class=Config) -> Flask:
         history = (
             Message.query
             .filter(Message.chat_id == chat_id)
-            .order_by(Message.id.asc())
-            .all()
+            .order_by(Message.id.desc())
+            .limit(5)
+            .all()[::-1]
         )
-
+                
         client = genai.Client(api_key=current_app.config["GOOGLE_API_KEY"])
 
         try:
@@ -79,7 +80,7 @@ def create_app(config_class=Config) -> Flask:
         except Exception:
             config = None 
 
-        chat = client.chats.create(model="gemini-2.5-flash", config=config)
+        chat = client.chats.create(model="gemini-2.5-flash-lite", config=config)
 
         for msg in history:
             if msg.content and msg.role == "user":

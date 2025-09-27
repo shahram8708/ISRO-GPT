@@ -52,27 +52,6 @@ body {
   color: #fff;
 }
 
-.loading-spinner {
-  display: none;
-  width: 3rem;
-  height: 3rem;
-  margin: 1rem auto;
-  border: 0.25rem solid #f3f3f3;
-  border-top: 0.25rem solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .custom-file-input {
   position: relative;
   overflow: hidden;
@@ -202,6 +181,57 @@ body {
 }
 
 a {
-  color: #ffffff;
+  color: rgb(253, 0, 0);
   text-decoration: none;
+}
+
+/* typing animation for the dots */
+.ai-thinking-dots {
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+}
+
+.ai-thinking-dots::after {
+  content: ' .';
+  animation: dots 1s steps(3, end) infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: '';
+  }
+
+  33% {
+    content: '.';
+  }
+
+  66% {
+    content: '..';
+  }
+
+  100% {
+    content: '...';
+  }
+}
+
+.ai-thinking-bubble {
+  opacity: 0.95;
+  transform-origin: left center;
+  animation: pulse 1.8s ease-in-out infinite;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.04));
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.003);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
