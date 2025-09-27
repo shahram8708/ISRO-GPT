@@ -533,4 +533,4 @@ def create_app(config_class=Config) -> Flask:
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True, host="0.0.0.0", use_reloader=True)
+    app.run(debug=True, host="0.0.0.0", use_reloader=False)
