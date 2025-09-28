@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="chat-container d-flex flex-column h-100">
+  <div class="chat-header bg-white border-bottom shadow-sm py-3 px-4">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <button class="btn btn-outline-secondary btn-sm me-3 d-lg-none" onclick="history.back()">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div>
+          <h1 class="h4 fw-bold text-dark mb-0">{{ chat.name }}</h1>
+          <small class="text-muted">
+            <i class="fas fa-eye me-1"></i>Read-Only Mode •
+            {{ messages|length }} messages
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="chat-history" class="chat-messages-container flex-grow-1 position-relative">
+    <div class="chat-messages p-3 p-md-4">
+      {% for msg in messages %}
+      <div class="message-wrapper {{ 'user-message-wrapper' if msg.role=='user' else 'ai-message-wrapper' }} mb-4">
+        <div class="message-bubble d-flex {{ 'justify-content-end' if msg.role=='user' else 'justify-content-start' }}">
+          {% if msg.role == 'ai' %}
+          <div class="message-avatar me-3 flex-shrink-0">
+            <div
+              class="avatar ai-avatar bg-primary bg-gradient rounded-circle d-flex align-items-center justify-content-center">
+              <i class="fas fa-rocket text-white"></i>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="message-content {{ 'user-content' if msg.role=='user' else 'ai-content' }}">
+            <div class="message-bubble-inner position-relative">
+              <div class="message-text">
+                {{ msg.content }}
+              </div>
+
+              <div class="message-actions mt-1 me-1">
+                <button class="btn btn-sm btn-light copy-message" data-message="{{ msg.content|replace('"', ' &quot;')
+                  }}">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="message-timestamp mt-1">
+              <small class="text-muted">
+                {{ msg.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+              </small>
+            </div>
+          </div>
+
+          {% if msg.role == 'user' %}
+          <div class="message-avatar ms-3 flex-shrink-0">
+            <div
+              class="avatar user-avatar bg-secondary bg-gradient rounded-circle d-flex align-items-center justify-content-center">
+              <i class="fas fa-user text-white"></i>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if not messages %}
+      <div class="empty-state text-center py-5">
+        <div class="empty-icon mb-3">
+          <i class="fas fa-comments fa-3x text-light"></i>
+        </div>
+        <h4 class="text-muted fw-semibold">No messages yet</h4>
+        <p class="text-muted">This conversation is empty</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="read-only-notice bg-light border-top py-2 px-3 text-center">
+    <small class="text-muted">
+      <i class="fas fa-lock me-1"></i>This is a read-only conversation
+    </small>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const chatContainer = document.getElementById('chat-history');
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    document.querySelectorAll('.copy-message').forEach(button => {
+      button.addEventListener('click', function () {
+        const message = this.getAttribute('data-message');
+        navigator.clipboard.writeText(message).then(() => {
+          const originalIcon = this.innerHTML;
+          this.innerHTML = '<i class="fas fa-check"></i>';
+          this.classList.remove('btn-light');
+          this.classList.add('btn-success');
+
+          setTimeout(() => {
+            this.innerHTML = originalIcon;
+            this.classList.remove('btn-success');
+            this.classList.add('btn-light');
+          }, 2000);
+        });
+      });
+    });
+
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm) chatForm.style.display = 'none';
+  });
+</script>
+{% endblock %}
+
+<style>
+  .chat-container {
+    height: 100vh;
+    max-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+  }
+
+  .chat-messages-container {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .chat-messages-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-messages-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+  }
+
+  .chat-messages-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+  }
+
+  .chat-messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .message-wrapper {
+    transition: all 0.3s ease;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+  }
+
+  @media (max-width: 768px) {
+    .message-bubble {
+      max-width: 95%;
+    }
+  }
+
+  .message-content {
+    position: relative;
+  }
+
+  .message-bubble-inner {
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .ai-content .message-bubble-inner {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-bottom-left-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .user-content .message-bubble-inner {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .user-content .message-text {
+    color: white;
+  }
+
+  .user-content .message-timestamp small {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-avatar {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+  }
+
+  .user-avatar {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+  }
+
+  .message-bubble-inner:hover .message-actions {
+    opacity: 1 !important;
+  }
+
+  .message-actions .btn {
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .message-text {
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .message-wrapper:hover {
+    transform: translateY(-1px);
+  }
+
+  .message-bubble-inner:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .message-text {
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 576px) {
+    .chat-header {
+      padding: 0.75rem 1rem;
+    }
+
+    .chat-messages {
+      padding: 1rem !important;
+    }
+
+    .message-bubble {
+      max-width: 100%;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+    }
+
+    .message-bubble-inner {
+      padding: 10px 14px;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .chat-container {
+      background: linear-gradient(135deg, #1a1d23 0%, #2d3035 100%);
+    }
+
+    .chat-header {
+      background-color: #2d3035 !important;
+      border-color: #3d4047 !important;
+    }
+
+    .chat-header h1,
+    .chat-header .text-dark {
+      color: #e9ecef !important;
+    }
+
+    .ai-content .message-bubble-inner {
+      background: linear-gradient(135deg, #2d3035 0%, #3d4047 100%);
+      border-color: #4d5057;
+      color: #e9ecef;
+    }
+
+    .read-only-notice {
+      background-color: #2d3035 !important;
+      border-color: #3d4047 !important;
+    }
+
+    .empty-state .text-muted {
+      color: #adb5bd !important;
+    }
+  }
+
+  @keyframes messageAppear {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .message-wrapper {
+    animation: messageAppear 0.3s ease-out;
+  }
+</style>

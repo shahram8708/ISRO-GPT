@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block title %}Forgot Password - ISRO-GPT{% endblock %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div class="container-fluid vh-100 bg-light py-5">
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="bg-gradient-primary text-center py-4">
+          <div class="mb-3">
+            <i class="fas fa-unlock-alt fa-2x text-white opacity-90"></i>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0">Forgot Password</h2>
+          <p class="text-white opacity-75 mb-0 mt-2">Enter your registered email to reset password</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <form method="post" novalidate class="needs-validation" id="forgot-form">
+            <div class="mb-4">
+              <div class="form-floating">
+                <input name="email" type="email" class="form-control rounded-3" placeholder="email" required>
+                <label class="form-label">Email</label>
+              </div>
+              <div id="email-error" class="d-flex align-items-center mt-2">
+                <small class="text-danger"></small>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <div class="d-flex align-items-center">
+                <div class="form-floating flex-grow-1 me-2">
+                  <input type="text" id="otp" class="form-control rounded-3" placeholder="Enter OTP" disabled>
+                  <label for="otp" class="form-label">OTP</label>
+                </div>
+                <button type="button" id="send-otp-btn" class="btn btn-secondary me-2">
+                  <span class="spinner-border spinner-border-sm d-none" role="status" id="send-otp-spinner"></span>
+                  Send OTP
+                </button>
+                <button type="button" id="verify-otp-btn" class="btn btn-success" disabled>
+                  <span class="spinner-border spinner-border-sm d-none" role="status" id="verify-otp-spinner"></span>
+                  Verify OTP
+                </button>
+              </div>
+              <small id="otp-feedback" class="text-danger mt-1 d-block"></small>
+            </div>
+
+            <div class="mb-4">
+              <div class="form-floating">
+                <input name="password" type="password" class="form-control rounded-3" placeholder="password" disabled>
+                <label class="form-label">New Password</label>
+              </div>
+              <div id="pw-error" class="d-flex align-items-center mt-2">
+                <small class="text-danger"></small>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <div class="form-floating">
+                <input name="confirm_password" type="password" class="form-control rounded-3"
+                  placeholder="confirm password" disabled>
+                <label class="form-label">Confirm Password</label>
+              </div>
+            </div>
+
+            <div class="d-grid mb-4">
+              <button id="reset-btn" type="button" class="btn btn-primary btn-lg rounded-3 fw-semibold py-3"
+                disabled>Reset Password</button>
+            </div>
+
+            <div class="text-center">
+              <p class="text-muted mb-0">
+                Remembered? <a href="{{ url_for('login') }}" class="text-decoration-none fw-semibold text-primary">Sign
+                  In</a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <small class="text-muted">By resetting your password, you agree to our <a href="#"
+            class="text-decoration-none text-dark">Terms</a>.</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  }
+
+  .rounded-4 {
+    border-radius: 1rem !important;
+  }
+
+  .rounded-3 {
+    border-radius: 0.75rem !important;
+  }
+
+  .shadow-lg {
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .form-control {
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const sendBtn = document.getElementById('send-otp-btn');
+    const verifyBtn = document.getElementById('verify-otp-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const emailInput = document.querySelector('input[name="email"]');
+    const otpInput = document.getElementById('otp');
+    const passwordInput = document.querySelector('input[name="password"]');
+    const confirmInput = document.querySelector('input[name="confirm_password"]');
+    const sendSpinner = document.getElementById('send-otp-spinner');
+    const verifySpinner = document.getElementById('verify-otp-spinner');
+    const feedback = document.getElementById('otp-feedback');
+    const emailError = document.querySelector('#email-error small');
+    const pwError = document.querySelector('#pw-error small');
+
+    function csrfToken() {
+      const m = document.querySelector('meta[name="csrf-token"]');
+      return m ? m.content : '';
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      feedback.textContent = '';
+      emailError.textContent = '';
+      const email = emailInput.value.trim();
+      if (!email) { emailError.textContent = 'Please enter your email.'; return; }
+
+      sendSpinner.classList.remove('d-none');
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch('{{ url_for("send_forgot_otp") }}'.replace('/send_forgot_otp', '/send_otp'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken()
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json().catch(() => ({ success: false, message: 'Invalid server response' }));
+        sendSpinner.classList.add('d-none');
+        sendBtn.disabled = false;
+
+        if (res.ok && data.success) {
+          otpInput.disabled = false;
+          verifyBtn.disabled = false;
+          feedback.classList.remove('text-danger');
+          feedback.classList.add('text-success');
+          feedback.textContent = 'OTP sent! Check your email.';
+          sendBtn.style.display = 'none';
+        } else {
+          feedback.classList.remove('text-success');
+          feedback.classList.add('text-danger');
+          feedback.textContent = data.message || 'Failed to send OTP.';
+        }
+
+      } catch (err) {
+        sendSpinner.classList.add('d-none');
+        sendBtn.disabled = false;
+        feedback.classList.add('text-danger');
+        feedback.textContent = 'Network error.';
+        console.error(err);
+      }
+    });
+
+    verifyBtn.addEventListener('click', async () => {
+      feedback.textContent = '';
+      verifySpinner.classList.remove('d-none');
+      verifyBtn.disabled = true;
+
+      try {
+        const res = await fetch('{{ url_for("verify_forgot_otp") }}'.replace('/verify_forgot_otp', '/verify_otp'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken()
+          },
+          body: JSON.stringify({ email: emailInput.value.trim(), otp: otpInput.value.trim() })
+        });
+
+        const data = await res.json().catch(() => ({ success: false, message: 'Invalid server response' }));
+        verifySpinner.classList.add('d-none');
+        verifyBtn.disabled = false;
+
+        if (res.ok && data.success) {
+          feedback.classList.remove('text-danger');
+          feedback.classList.add('text-success');
+          feedback.textContent = 'OTP verified! You can now set a new password.';
+          passwordInput.disabled = false;
+          confirmInput.disabled = false;
+          passwordInput.focus();
+          verifyBtn.style.display = 'none';
+          resetBtn.disabled = false;
+        } else {
+          feedback.classList.remove('text-success');
+          feedback.classList.add('text-danger');
+          feedback.textContent = data.message || 'OTP verification failed.';
+        }
+
+      } catch (err) {
+        verifySpinner.classList.add('d-none');
+        verifyBtn.disabled = false;
+        feedback.classList.add('text-danger');
+        feedback.textContent = 'Network error.';
+        console.error(err);
+      }
+    });
+
+    resetBtn.addEventListener('click', async () => {
+      pwError.textContent = '';
+      feedback.textContent = '';
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const confirm = confirmInput.value;
+
+      if (!email || !password || !confirm) {
+        pwError.textContent = 'Please fill all fields.';
+        return;
+      }
+
+      if (password !== confirm) {
+        pwError.textContent = 'Passwords do not match.';
+        return;
+      }
+
+      resetBtn.disabled = true;
+      resetBtn.textContent = 'Resetting...';
+
+      try {
+        const res = await fetch('{{ url_for("reset_password") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken()
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ email, password, confirm })
+        });
+
+        const data = await res.json().catch(() => ({ success: false, message: 'Invalid server response' }));
+
+        resetBtn.disabled = false;
+        resetBtn.textContent = 'Reset Password';
+
+        if (res.ok && data.success) {
+          feedback.classList.remove('text-danger');
+          feedback.classList.add('text-success');
+          feedback.textContent = data.message || 'Password reset successful.';
+
+          setTimeout(() => {
+            window.location.href = "{{ url_for('login') }}";
+          }, 1400);
+        } else {
+          feedback.classList.remove('text-success');
+          feedback.classList.add('text-danger');
+          feedback.textContent = data.message || 'Failed to reset password.';
+        }
+
+      } catch (err) {
+        resetBtn.disabled = false;
+        resetBtn.textContent = 'Reset Password';
+        feedback.classList.remove('text-success');
+        feedback.classList.add('text-danger');
+        feedback.textContent = 'Network error. Please try again.';
+        console.error('Reset password error:', err);
+      }
+    });
+
+  });
+</script>
+{% endblock %}

@@ -74,6 +74,13 @@ class Message(db.Model):
     def __repr__(self) -> str:
         return f"<Message {self.role} {'with file' if self.file_path else ''}>"
 
+class ShareLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    chat_id = db.Column(db.Integer, db.ForeignKey('chats.id'), nullable=False) 
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    chat = db.relationship("Chat", backref="share_links")
 
 class ChatParticipant(db.Model):
     __tablename__ = "chat_participants"

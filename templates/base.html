@@ -27,10 +27,25 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          {% if current_user.is_authenticated %}
           <li class="nav-item">
             <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('dashboard') }}">
               <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('contact') }}">
+              <i class="fas fa-envelope me-1"></i>Contact Us
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('support') }}">
+              <i class="fas fa-book-open me-1"></i>Support
+            </a>
+          </li>
+          {% if current_user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('new_chat') }}">
+              <i class="fas fa-plus me-1"></i>New Chat
             </a>
           </li>
           {% if current_user.is_admin %}
@@ -65,7 +80,7 @@
   <div class="container-lg">
     {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
-    <div class="flash-messages position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div class="flash-messages position-fixed top-0 start-0 p-3" style="z-index: 1080;">
       {% for category, message in messages %}
       <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm rounded-3 mb-2 flash-alert"
         role="alert" style="min-width: 280px; max-width: 350px;">

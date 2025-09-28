@@ -23,3 +23,12 @@ class Config:
     GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "AIzaSyC1dSEI8aENjszrP9IcqZYX561QV8ASHa0")
 
     MESSAGES_PER_PAGE = int(os.environ.get("MESSAGES_PER_PAGE", 50))
+
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'multimosaic.help@gmail.com')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'eurr xxsx brxz anrz')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'multimosaic.help@gmail.com')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'multimosaic.help@gmail.com')

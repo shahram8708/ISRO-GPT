@@ -7,6 +7,7 @@ from typing import List, Optional
 from mistune import markdown
 from xhtml2pdf import pisa
 from io import BytesIO
+from datetime import datetime
 from flask import (
     Flask,
     render_template,
@@ -24,19 +25,22 @@ from flask_login import (
     login_user,
     logout_user,
     login_required,
+    AnonymousUserMixin,
 )
 from flask_wtf.csrf import generate_csrf
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
-
+from flask_mail import Mail
+import flask_mail
 import pdfplumber
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-
+import random
+from flask import session, jsonify
 from config import Config
 from extensions import db, login_manager, csrf, migrate
-from forms import RegistrationForm, LoginForm
-from models import User, Chat, Message, ChatParticipant
+from forms import RegistrationForm, LoginForm, ContactForm
+from models import User, Chat, Message, ChatParticipant, ShareLink
 from google import genai
 
 def allowed_file(filename: str) -> bool:
@@ -53,6 +57,7 @@ def create_app(config_class=Config) -> Flask:
     login_manager.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
+    mail = Mail(app) 
 
     login_manager.login_view = "login"
     login_manager.login_message_category = "info"
@@ -132,9 +137,7 @@ def create_app(config_class=Config) -> Flask:
 
     @app.route("/")
     def index():
-        if current_user.is_authenticated:
-            return redirect(url_for("dashboard"))
-        return redirect(url_for("login"))
+        return redirect(url_for("dashboard"))
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
@@ -142,19 +145,64 @@ def create_app(config_class=Config) -> Flask:
             return redirect(url_for("dashboard"))
         form = RegistrationForm()
         if form.validate_on_submit():
+            if not session.get('otp_verified'):
+                flash("Please verify your email OTP before registering.", "danger")
+                return render_template("register.html", form=form)
+
             try:
                 user = User(username=form.username.data, email=form.email.data)
                 user.set_password(form.password.data)
                 db.session.add(user)
                 db.session.commit()
+                session.pop('otp_verified', None)
+                session.pop('registration_otp', None)
+                session.pop('registration_email', None)
                 flash("Account created! You can now log in.", "success")
                 return redirect(url_for("login"))
             except Exception as e:
                 db.session.rollback()
-                app.logger.error("Registration error: %s", e)
+                current_app.logger.error("Registration error: %s", e)
                 flash("An error occurred during registration. Please try again.", "danger")
         return render_template("register.html", form=form)
 
+    @app.route("/send_otp", methods=["POST"])
+    def send_otp():
+        data = request.get_json(force=True) or {}
+        email = (data.get("email") or "").strip()
+        if not email:
+            return jsonify(success=False, message="Email is required"), 400
+
+        otp = str(random.randint(100000, 999999))
+        session['registration_otp'] = otp
+        session['registration_email'] = email
+
+        try:
+            msg = flask_mail.Message(
+                subject="Your ISRO-GPT OTP",
+                recipients=[email],
+                body=f"Your OTP for registration is: {otp}. It expires in 10 minutes."
+            )
+            mail.send(msg)
+            return jsonify(success=True)
+        except Exception as e:
+            current_app.logger.error("Failed to send OTP: %s", e)
+            return jsonify(success=False, message="Failed to send OTP"), 500
+
+    @app.route("/verify_otp", methods=["POST"])
+    def verify_otp():
+        data = request.get_json() or {}
+        email = data.get("email")
+        otp = data.get("otp")
+
+        if not email or not otp:
+            return jsonify(success=False, message="Email and OTP are required")
+
+        if session.get("registration_otp") == otp and session.get("registration_email") == email:
+            session['otp_verified'] = True
+            return jsonify(success=True)
+        else:
+            return jsonify(success=False, message="Invalid OTP")
+        
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if current_user.is_authenticated:
@@ -185,15 +233,17 @@ def create_app(config_class=Config) -> Flask:
         return redirect(url_for("login"))
 
     @app.route("/dashboard")
-    @login_required
     def dashboard():
-        chats = (
-            Chat.query.join(ChatParticipant)
-            .filter(ChatParticipant.user_id == current_user.id)
-            .options(joinedload(Chat.messages))
-            .order_by(Chat.created_at.desc())
-            .all()
-        )
+        if isinstance(current_user, AnonymousUserMixin):
+            chats = []
+        else:
+            chats = (
+                Chat.query.join(ChatParticipant)
+                .filter(ChatParticipant.user_id == current_user.id)
+                .options(joinedload(Chat.messages))
+                .order_by(Chat.created_at.desc())
+                .all()
+            )
         return render_template("dashboard.html", chats=chats)
 
     @app.route("/chat/new")
@@ -426,6 +476,87 @@ def create_app(config_class=Config) -> Flask:
         export_name = f"chat_{chat_id}.pdf"
         return send_file(pdf_bytes, as_attachment=True, download_name=export_name, mimetype="application/pdf")
 
+    @app.route("/forgot", methods=["GET"])
+    def forgot():
+        return render_template("forgot.html")
+
+    @app.route("/send_otp", methods=["POST"])
+    def send_forgot_otp():
+        data = request.get_json(force=True) or {}
+        email = (data.get("email") or "").strip().lower()
+        if not email:
+            return jsonify(success=False, message="Email is required"), 400
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify(success=False, message="No account with that email was found."), 404
+
+        otp = str(random.randint(100000, 999999))
+        session['forgot_otp'] = otp
+        session['forgot_email'] = email
+        session['forgot_otp_sent_at'] = int(datetime.utcnow().timestamp())
+
+        try:
+            msg = flask_mail.Message(
+                subject="ISRO-GPT Password Reset OTP",
+                recipients=[email],
+                body=f"Your password reset OTP is: {otp}\nIt is valid for 10 minutes."
+            )
+            mail.send(msg)
+            return jsonify(success=True)
+        except Exception as e:
+            app.logger.error("Failed to send forgot OTP: %s", e)
+            return jsonify(success=False, message="Failed to send OTP"), 500
+
+    @app.route("/verify_otp", methods=["POST"])
+    def verify_forgot_otp():
+        data = request.get_json(force=True) or {}
+        email = (data.get("email") or "").strip().lower()
+        otp = (data.get("otp") or "").strip()
+
+        if not email or not otp:
+            return jsonify(success=False, message="Email and OTP are required"), 400
+
+        sent_ts = session.get('forgot_otp_sent_at')
+        if sent_ts and (int(datetime.utcnow().timestamp()) - sent_ts) > 600:
+            return jsonify(success=False, message="OTP expired. Please request a new one."), 400
+
+        if session.get("forgot_otp") == otp and session.get("forgot_email") == email:
+            session['forgot_otp_verified'] = True
+            session['forgot_email'] = email
+            return jsonify(success=True)
+        else:
+            return jsonify(success=False, message="Invalid OTP"), 400
+
+    @app.route("/reset_password", methods=["POST"])
+    def reset_password():
+        data = request.get_json(force=True) or {}
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password") or ""
+        confirm = data.get("confirm") or ""
+
+        if not email or not password or not confirm:
+            return jsonify(success=False, message="All fields are required"), 400
+        if password != confirm:
+            return jsonify(success=False, message="Passwords do not match"), 400
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify(success=False, message="User not found"), 404
+
+        try:
+            user.set_password(password) 
+            db.session.commit()
+
+            for k in ('forgot_otp', 'forgot_email', 'forgot_otp_sent_at', 'forgot_otp_verified'):
+                session.pop(k, None)
+
+            return jsonify(success=True, message="Password reset successful. You can now log in.")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error("Password reset error: %s", e)
+            return jsonify(success=False, message="Failed to reset password"), 500
+        
     @app.route("/setup_admin")
     def setup_admin():
         username = "admin"
@@ -497,6 +628,49 @@ def create_app(config_class=Config) -> Flask:
         flash("User deleted.", "success")
         return redirect(url_for("admin_users"))
 
+    @app.route("/chat/share/<int:chat_id>")
+    @login_required
+    def generate_share_link(chat_id: int):
+        chat = Chat.query.get_or_404(chat_id)
+        participant = ChatParticipant.query.filter_by(chat_id=chat_id, user_id=current_user.id).first()
+        if not participant or participant.role != "owner":
+            abort(403)
+
+        token = uuid.uuid4().hex
+        share = ShareLink(token=token, chat_id=chat.id)
+        db.session.add(share)
+        db.session.commit()
+
+        share_url = url_for("view_shared_chat", token=token, _external=True)
+        flash(f"Share this link: {share_url}", "info")
+        return redirect(url_for("chat_view", chat_id=chat_id))
+
+
+    @app.route("/chat/view/<token>")
+    def view_shared_chat(token: str):
+        share = ShareLink.query.filter_by(token=token).first_or_404()
+        chat = Chat.query.options(joinedload(Chat.messages)).get_or_404(share.chat_id)
+        messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.id.asc()).all()
+
+        return render_template(
+            "chat_shared.html",
+            chat=chat,
+            messages=messages
+        )
+
+    @app.route('/feedback/like', methods=['POST'])
+    @login_required
+    def feedback_like():
+        return jsonify(success=True, message="Thanks! Glad you liked this response 🙌")
+
+    @app.route('/feedback/dislike', methods=['POST'])
+    @login_required
+    def feedback_dislike():
+        data = request.get_json() or {}
+        reasons = data.get("reasons", [])
+        comments = data.get("comments", "")
+        return jsonify(success=True, message="Feedback recorded. We'll use this to improve 🤝")
+
     @app.route("/chat/invite/<int:chat_id>")
     @login_required
     def invite_user(chat_id: int):
@@ -521,6 +695,39 @@ def create_app(config_class=Config) -> Flask:
             db.session.commit()
         return redirect(url_for("chat_view", chat_id=chat_id))
 
+    @app.route("/contact", methods=["GET", "POST"])
+    def contact():
+        form = ContactForm()
+        
+        if form.validate_on_submit():
+            try:
+                msg = flask_mail.Message(
+                subject=f"Contact Form: {form.query_type.data} from {form.name.data}",
+                recipients=[app.config['ADMIN_EMAIL']],
+                body=f"""
+Name: {form.name.data}
+Email: {form.email.data}
+Query Type: {form.query_type.data}
+Subscribe to updates: {'Yes' if form.subscribe.data else 'No'}
+
+Message:
+{form.message.data}
+"""
+            )
+                mail.send(msg)
+                flash('Your message has been sent successfully! We will get back to you soon.', 'success')
+                return redirect(url_for('contact'))
+                
+            except Exception as e:
+                app.logger.error(f"Failed to send contact email: {e}")
+                flash('Sorry, there was an error sending your message. Please try again later.', 'danger')
+        
+        return render_template('contact.html', form=form)
+    
+    @app.route("/support")
+    def support():
+        return render_template("support.html")
+    
     with app.app_context():
         try:
             db.create_all()
@@ -534,3 +741,4 @@ def create_app(config_class=Config) -> Flask:
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True, host="0.0.0.0", use_reloader=False)
+    # app.run(debug=True, host="0.0.0.0")

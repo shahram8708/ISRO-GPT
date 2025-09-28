@@ -41,7 +41,6 @@ body {
 .sidebar a {
   color: #adb5bd;
   display: block;
-  padding: 0.5rem 1rem;
   text-decoration: none;
 }
 
@@ -50,6 +49,10 @@ body {
 .bg-click {
   background-color: #495057;
   color: #fff;
+}
+
+.bg-click-user {
+  background-color: #ecf0f1;
 }
 
 .custom-file-input {
@@ -185,7 +188,6 @@ a {
   text-decoration: none;
 }
 
-/* typing animation for the dots */
 .ai-thinking-dots {
   display: inline-block;
   width: 1.2em;

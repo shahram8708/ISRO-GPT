@@ -46,6 +46,126 @@
             </div>
 
             <div class="mb-4">
+              <div class="d-flex align-items-center">
+                <div class="form-floating flex-grow-1 me-2">
+                  <input type="text" id="otp" class="form-control rounded-3" placeholder="Enter OTP" disabled>
+                  <label for="otp" class="form-label">OTP</label>
+                </div>
+                <button type="button" id="send-otp-btn" class="btn btn-secondary me-2">
+                  <span class="spinner-border spinner-border-sm d-none" role="status" id="send-otp-spinner"></span>
+                  Send OTP
+                </button>
+                <button type="button" id="verify-otp-btn" class="btn btn-success" disabled>
+                  <span class="spinner-border spinner-border-sm d-none" role="status" id="verify-otp-spinner"></span>
+                  Verify OTP
+                </button>
+              </div>
+              <small id="otp-feedback" class="text-danger mt-1 d-block"></small>
+            </div>
+
+            <script>
+              document.addEventListener('DOMContentLoaded', function () {
+                const sendBtn = document.getElementById('send-otp-btn');
+                const verifyBtn = document.getElementById('verify-otp-btn');
+                const emailInput = document.querySelector('input[name="email"]');
+                const otpInput = document.getElementById('otp');
+                const sendSpinner = document.getElementById('send-otp-spinner');
+                const verifySpinner = document.getElementById('verify-otp-spinner');
+                const feedback = document.getElementById('otp-feedback');
+
+                sendBtn.addEventListener('click', async () => {
+                  feedback.textContent = '';
+                  sendSpinner.classList.remove('d-none');
+                  sendBtn.disabled = true;
+
+                  try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+                    const res = await fetch('{{ url_for("send_otp") }}', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                      },
+                      body: JSON.stringify({ email: emailInput.value.trim() })
+                    });
+                    let data;
+                    if (res.ok) {
+                      data = await res.json();
+                    } else {
+                      const text = await res.text();
+                      feedback.classList.add('text-danger');
+                      feedback.textContent = "Server error: " + text;
+                      sendSpinner.classList.add('d-none');
+                      sendBtn.disabled = false;
+                      return;
+                    }
+
+                    sendSpinner.classList.add('d-none');
+                    sendBtn.disabled = false;
+
+                    if (data.success) {
+                      otpInput.disabled = false;
+                      verifyBtn.disabled = false;
+                      feedback.classList.remove('text-danger');
+                      feedback.classList.add('text-success');
+                      feedback.textContent = "OTP sent! Check your email.";
+
+                      sendBtn.style.display = 'none';
+                    } else {
+                      feedback.classList.remove('text-success');
+                      feedback.classList.add('text-danger');
+                      feedback.textContent = data.message || "Failed to send OTP.";
+                    }
+
+                  } catch (err) {
+                    feedback.classList.add('text-danger');
+                    feedback.textContent = "Network error or invalid JSON response.";
+                    console.error(err);
+                    sendSpinner.classList.add('d-none');
+                    sendBtn.disabled = false;
+                  }
+                });
+
+                verifyBtn.addEventListener('click', async () => {
+                  feedback.textContent = '';
+                  verifySpinner.classList.remove('d-none');
+                  verifyBtn.disabled = true;
+
+                  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+                  const res = await fetch('{{ url_for("verify_otp") }}', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ email: emailInput.value, otp: otpInput.value })
+                  });
+
+                  const data = await res.json();
+                  verifySpinner.classList.add('d-none');
+                  verifyBtn.disabled = false;
+
+                  if (data.success) {
+                    feedback.classList.remove('text-danger');
+                    feedback.classList.add('text-success');
+                    feedback.textContent = "OTP verified! Enter your password below to finish creating your account.";
+                    document.querySelector('input[name="username"]').disabled = false;
+                    document.querySelector('input[name="password"]').disabled = false;
+                    document.querySelector('input[name="confirm_password"]').disabled = false;
+                    document.querySelector('input[name="username"]').focus();
+                    verifyBtn.style.display = 'none';
+                  } else {
+                    feedback.classList.remove('text-success');
+                    feedback.classList.add('text-danger');
+                    feedback.textContent = data.message || "OTP verification failed.";
+                  }
+                });
+              });
+            </script>
+
+            <div class="mb-4">
               <div class="form-floating">
                 {{ form.password(class="form-control rounded-3", placeholder="password") }}
                 {{ form.password.label(class="form-label") }}

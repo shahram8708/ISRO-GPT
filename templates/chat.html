@@ -72,20 +72,26 @@
                 <small class="text-white">{{ c.messages[-1].content[:30] if c.messages else 'No messages yet' }}</small>
               </div>
             </a>
-            {% if current_user.id == c.owner_id %}
             <div class="d-flex align-items-center">
-              <a href="javascript:void(0);" class="text-light me-2 rename-chat" data-id="{{ c.id }}" title="Rename">
+              <a href="javascript:void(0);" class="text-light me-3 mt-2 ms-3 rename-chat" data-id="{{ c.id }}"
+                title="Rename">
                 <i class="fas fa-edit"></i>
               </a>
-              <a href="javascript:void(0);" class="text-danger me-2 delete-chat" data-id="{{ c.id }}" title="Delete">
+              <a href="javascript:void(0);" class="text-danger me-3 mt-2 delete-chat" data-id="{{ c.id }}"
+                title="Delete">
                 <i class="fas fa-trash"></i>
               </a>
-              <a href="{{ url_for('export_chat', chat_id=c.id) }}" class="text-success export-chat" title="Export">
+              <a href="{{ url_for('invite_user', chat_id=chat.id) }}" class="text-primary me-3 mt-2"
+                title="Invite Participants"><i class="fas fa-user-plus"></i></a>
+              <a href="{{ url_for('generate_share_link', chat_id=chat.id) }}" class="text-info me-3 mt-2"
+                title="Share Chat">
+                <i class="fas fa-share-alt"></i>
+              </a>
+              <a href="{{ url_for('export_chat', chat_id=c.id) }}" class="text-success export-chat mt-2" title="Export">
                 <i class="fas fa-file-export"></i>
               </a>
 
             </div>
-            {% endif %}
           </li>
           {% endfor %}
         </ul>
@@ -122,6 +128,10 @@
             data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle sidebar">
             <i class="fas fa-bars"></i>
           </button>
+          <a href="{{ url_for('delete_chat', chat_id=chat.id) }}" class="btn btn-sm btn-outline-danger me-2"
+            title="Delete">
+            <i class="fas fa-trash"></i>
+          </a>
           <a href="{{ url_for('invite_user', chat_id=chat.id) }}" class="btn btn-sm btn-outline-primary me-2"
             title="Invite Participants"><i class="fas fa-user-plus"></i></a>
           <a href="{{ url_for('export_chat', chat_id=chat.id) }}" class="btn btn-sm btn-outline-success me-2"
@@ -129,17 +139,19 @@
             <i class="fas fa-file-export"></i>
           </a>
 
-          {% if participant.role == 'owner' %}
-          <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#renameModal"><i
+          <button class="btn btn-sm btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#renameModal"><i
               class="fas fa-pen"></i></button>
-          {% endif %}
+          <a href="{{ url_for('generate_share_link', chat_id=chat.id) }}" class="btn btn-sm btn-outline-info"
+            title="Share Chat">
+            <i class="fas fa-share-alt"></i>
+          </a>
         </div>
       </div>
       <div id="chat-history" class="chat-history p-3 my-3"
         style="height: 70%; overflow-y: auto; background: #f8f9fa; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
         {% for msg in messages %}
         <div class="d-flex mb-3 {{ 'justify-content-end' if msg.role=='user' else 'justify-content-start' }}">
-          <div class="p-3 rounded shadow-sm {{ 'bg-primary text-white' if msg.role=='user' else 'bg-light text-dark' }}"
+          <div class="p-3 rounded shadow-sm {{ 'bg-click-user' if msg.role=='user' else 'bg-light text-dark' }}"
             style="max-width: 100%;">
 
             {% if msg.content %}
@@ -156,6 +168,14 @@
 
             {% if msg.role != 'user' %}
             <div class="msg-actions mt-2 d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-link text-success btn-like" title="Like" aria-label="Like">
+                <i class="fas fa-thumbs-up"></i>
+              </button>
+
+              <button type="button" class="btn btn-sm btn-link text-danger btn-dislike" title="Dislike"
+                aria-label="Dislike" data-msg-id="{{ msg.id }}">
+                <i class="fas fa-thumbs-down"></i>
+              </button>
               <button type="button" class="btn btn-sm btn-link text-decoration-none btn-copy" title="Copy"
                 aria-label="Copy">
                 <i class="fas fa-copy"></i>
@@ -210,6 +230,46 @@
         <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
       </form>
     </main>
+  </div>
+</div>
+
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="feedbackLabel">Why didn’t you like this response?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="dislike-form">
+          <input type="hidden" name="msg_id" id="dislike-msg-id">
+          <div class="mb-3">
+            <label class="form-label">Select reason(s):</label>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="Inaccurate" id="reason1" name="reasons">
+              <label class="form-check-label" for="reason1">Inaccurate / Wrong info</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="Not clear" id="reason2" name="reasons">
+              <label class="form-check-label" for="reason2">Not clear / confusing</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="Too short" id="reason3" name="reasons">
+              <label class="form-check-label" for="reason3">Too short</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="Other" id="reason4" name="reasons">
+              <label class="form-check-label" for="reason4">Other</label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <textarea class="form-control" name="comments" rows="2"
+              placeholder="Additional comments (optional)"></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger">Submit Feedback</button>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 

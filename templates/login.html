@@ -50,7 +50,8 @@
                 {{ form.remember(class="form-check-input rounded-1") }}
                 {{ form.remember.label(class="form-check-label text-muted small fw-medium") }}
               </div>
-              <a href="#" class="text-decoration-none small text-primary fw-medium">Forgot password?</a>
+              <a href="{{ url_for('forgot') }}" class="text-decoration-none small text-primary fw-medium">Forgot
+                password?</a>
             </div>
 
             <div class="d-grid mb-4">

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - ISRO GPT{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-primary mb-3">Contact Us</h1>
+                <p class="lead text-muted">We'd love to hear from you. Select your query type and send us a message.</p>
+            </div>
+
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-body p-4 p-md-5">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show rounded-3"
+                        role="alert">
+                        <i
+                            class="fas fa-{{ 'exclamation-triangle' if category == 'danger' else 'check-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-4">
+                            <label for="name" class="form-label fw-semibold">
+                                <i class="fas fa-user text-primary me-2"></i>Full Name
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name(class="form-control form-control-lg rounded-3" + (" is-invalid" if
+                            form.name.errors else ""), placeholder="Enter your full name") }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="email" class="form-label fw-semibold">
+                                <i class="fas fa-envelope text-primary me-2"></i>Email Address
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email(class="form-control form-control-lg rounded-3" + (" is-invalid" if
+                            form.email.errors else ""), placeholder="Enter your email address") }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="query_type" class="form-label fw-semibold">
+                                <i class="fas fa-question-circle text-primary me-2"></i>Query Type
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.query_type(class="form-select form-select-lg rounded-3" + (" is-invalid" if
+                            form.query_type.errors else "")) }}
+                            {% if form.query_type.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.query_type.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="message" class="form-label fw-semibold">
+                                <i class="fas fa-comment text-primary me-2"></i>Message
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.message(class="form-control form-control-lg rounded-3" + (" is-invalid" if
+                            form.message.errors else ""),
+                            rows="6",
+                            placeholder="Please provide detailed information about your inquiry (minimum 20
+                            characters)...",
+                            oninput="updateCharCount(this)") }}
+                            <div class="form-text">
+                                <span id="charCount">0</span> characters (minimum 20 required)
+                            </div>
+                            {% if form.message.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.message.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.subscribe(class="form-check-input") }}
+                                <label class="form-check-label" for="subscribe">
+                                    <i class="fas fa-bell text-primary me-2"></i>Subscribe to updates and newsletters
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" id="contactSubmitBtn"
+                                class="btn btn-primary btn-lg rounded-3 fw-semibold py-3">
+                                <span id="btnText"><i class="fas fa-paper-plane me-2"></i>Send Message</span>
+                                <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"
+                                    aria-hidden="true"></span>
+                            </button>
+                        </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const form = document.querySelector('form');
+                                const submitBtn = document.getElementById('contactSubmitBtn');
+                                const btnText = document.getElementById('btnText');
+                                const btnSpinner = document.getElementById('btnSpinner');
+
+                                form.addEventListener('submit', function () {
+                                    submitBtn.disabled = true;
+                                    btnSpinner.classList.remove('d-none');
+                                    btnText.textContent = 'Sending...';
+                                });
+                            });
+                        </script>
+
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    <i class="fas fa-clock me-2"></i>We typically respond within 24 hours
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+    }
+
+    .form-control,
+    .form-select {
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(13, 110, 253, 0.3);
+    }
+
+    .alert {
+        border: none;
+        border-left: 4px solid;
+    }
+</style>
+
+<script>
+    function updateCharCount(textarea) {
+        const charCount = textarea.value.length;
+        const counter = document.getElementById('charCount');
+        counter.textContent = charCount;
+
+        if (charCount < 20) {
+            counter.classList.add('text-danger');
+            counter.classList.remove('text-success');
+        } else {
+            counter.classList.remove('text-danger');
+            counter.classList.add('text-success');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const messageField = document.querySelector('textarea[name="message"]');
+        if (messageField) {
+            updateCharCount(messageField);
+        }
+
+        const queryTypeSelect = document.querySelector('select[name="query_type"]');
+        if (queryTypeSelect) {
+            const options = queryTypeSelect.options;
+            const icons = {
+                'general': 'fas fa-question',
+                'feedback': 'fas fa-comment-alt',
+                'support': 'fas fa-life-ring',
+                'bug': 'fas fa-bug',
+                'feature': 'fas fa-lightbulb',
+                'other': 'fas fa-ellipsis-h'
+            };
+
+        }
+    });
+
+    (function () {
+        'use strict';
+        window.addEventListener('load', function () {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+{% endblock %}

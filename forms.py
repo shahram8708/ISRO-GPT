@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 
 from models import User
@@ -49,3 +49,17 @@ class LoginForm(FlaskForm):
     )
     remember = BooleanField("Remember Me")
     submit = SubmitField("Login", render_kw={"class": "btn btn-primary w-100"})
+
+class ContactForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    query_type = SelectField('Query Type', choices=[
+        ('general', 'General Inquiry'),
+        ('feedback', 'Feedback'),
+        ('support', 'Support Request'),
+        ('bug', 'Bug Report'),
+        ('feature', 'Feature Request'),
+        ('other', 'Other')
+    ], validators=[DataRequired()])
+    message = TextAreaField('Message', validators=[DataRequired(), Length(min=20, message='Message must be at least 20 characters long')])
+    subscribe = BooleanField('Subscribe to updates and newsletters')

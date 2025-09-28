@@ -17,6 +17,74 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  chatHistory?.addEventListener('click', async (e) => {
+    const likeBtn = e.target.closest('.btn-like');
+    const dislikeBtn = e.target.closest('.btn-dislike');
+
+    if (likeBtn) {
+      try {
+        const resp = await fetch(`/feedback/like`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await resp.json();
+        if (data.success) {
+          showFlash('success', data.message || "Thanks for your feedback 🙌");
+        }
+      } catch (err) {
+        console.error(err);
+        showFlash('danger', "Failed to send like feedback");
+      }
+    }
+
+    if (dislikeBtn) {
+      const modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+      modal.show();
+    }
+  });
+
+  document.getElementById('dislike-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const reasons = Array.from(form.querySelectorAll('input[name="reasons"]:checked')).map(el => el.value);
+    const comments = form.querySelector('textarea[name="comments"]').value;
+
+    try {
+      const resp = await fetch(`/feedback/dislike`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ reasons, comments })
+      });
+
+      const data = await resp.json();
+      if (data.success) {
+        const modalEl = document.getElementById('feedbackModal');
+        bootstrap.Modal.getInstance(modalEl).hide();
+        showFlash('success', data.message || "Thanks for helping us improve 💡");
+      }
+    } catch (err) {
+      console.error(err);
+      showFlash('danger', "Failed to send dislike feedback");
+    }
+  });
+
+  function showFlash(type, message) {
+    const flash = document.createElement('div');
+    flash.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    flash.style.zIndex = 2000;
+    flash.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
+    document.body.appendChild(flash);
+    setTimeout(() => {
+      if (flash && flash.parentNode) flash.remove();
+    }, 4000);
+  }
+
   async function appendMessages(messages) {
     if (!Array.isArray(messages)) return;
 
@@ -28,8 +96,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const bubble = document.createElement('div');
       bubble.classList.add('p-3', 'rounded', 'shadow-sm');
-      bubble.classList.add(msg.role === 'user' ? 'bg-primary' : 'bg-light');
-      bubble.classList.add(msg.role === 'user' ? 'text-white' : 'text-dark');
+      bubble.classList.add(msg.role === 'user' ? 'bg-click-user' : 'bg-light');
+      bubble.classList.add(msg.role === 'user' ? 'text-dark' : 'text-dark');
       bubble.style.maxWidth = '70%';
       bubble.dataset.id = msg.id;
 
@@ -58,6 +126,20 @@ document.addEventListener('DOMContentLoaded', function () {
         ttsBtn.title = 'Listen';
         ttsBtn.setAttribute('data-state', 'idle');
         ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        const likeBtn = document.createElement('button');
+        likeBtn.type = 'button';
+        likeBtn.className = 'btn btn-sm btn-link text-success text-decoration-none btn-like';
+        likeBtn.title = 'Like';
+        likeBtn.innerHTML = '<i class="fas fa-thumbs-up"></i>';
+
+        const dislikeBtn = document.createElement('button');
+        dislikeBtn.type = 'button';
+        dislikeBtn.className = 'btn btn-sm btn-link text-danger text-decoration-none btn-dislike';
+        dislikeBtn.title = 'Dislike';
+        dislikeBtn.innerHTML = '<i class="fas fa-thumbs-down"></i>';
+
+        actions.appendChild(likeBtn);
+        actions.appendChild(dislikeBtn);
 
         actions.appendChild(copyBtn);
         actions.appendChild(ttsBtn);

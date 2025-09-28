@@ -1,0 +1,602 @@
+{% extends 'base.html' %}
+
+{% block title %}Support & Documentation - ISRO-GPT{% endblock %}
+
+{% block content %}
+<style>
+    .hero-docs {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 60%, #6610f2 100%);
+        color: #fff;
+        border-bottom-left-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+    }
+
+    .docs-sidenav {
+        top: 1rem;
+    }
+
+    .docs-sidenav .nav-link {
+        border-radius: .5rem;
+    }
+
+    .docs-sidenav .nav-link.active {
+        background: rgba(13, 110, 253, .1);
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .callout {
+        border-left: 4px solid #0d6efd;
+        background: #f8faff;
+    }
+
+    .feature-icon {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: .75rem;
+        color: #fff;
+    }
+
+    .bg-grad-1 {
+        background: linear-gradient(135deg, #0d6efd, #6f42c1);
+    }
+
+    .bg-grad-2 {
+        background: linear-gradient(135deg, #20c997, #0d6efd);
+    }
+
+    .bg-grad-3 {
+        background: linear-gradient(135deg, #fd7e14, #dc3545);
+    }
+
+    .bg-grad-4 {
+        background: linear-gradient(135deg, #6f42c1, #20c997);
+    }
+
+    .kbd {
+        background: #212529;
+        color: #fff;
+        padding: .2rem .4rem;
+        border-radius: .3rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: .85em;
+    }
+
+    .card-hover {
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, .08);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .toc-divider {
+        border-top: 1px dashed rgba(108, 117, 125, .3);
+    }
+
+    .step-num {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .tip-badge {
+        font-size: .75rem;
+        letter-spacing: .02em;
+    }
+
+    .code-pill {
+        background: #0d6efd0d;
+        border: 1px solid #0d6efd1f;
+        border-radius: .5rem;
+        padding: .35rem .6rem;
+    }
+
+    .faq-accordion .accordion-button:not(.collapsed) {
+        background: #f1f5ff;
+        color: #0d6efd;
+    }
+
+    .anchor-offset {
+        scroll-margin-top: 90px;
+    }
+</style>
+
+<section class="hero-docs py-5 mb-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-6 fw-bold mb-2"><i class="fas fa-book-open me-2"></i>Support & Documentation</h1>
+                <p class="lead mb-3">Learn how to get the most out of ISRO‑GPT: chat effectively, upload files, use
+                    voice mode, collaborate, and export your work.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="#onboarding" class="btn btn-light btn-lg text-start"><i
+                            class="fas fa-compass me-2"></i>Start Here</a>
+                    <a href="#tutorials" class="btn btn-outline-light btn-lg text-start"><i
+                            class="fas fa-graduation-cap me-2"></i>Tutorials</a>
+                </div>
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0">
+                <div class="card border-0 shadow-lg card-hover">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="feature-icon bg-grad-1 me-3"><i class="fas fa-rocket"></i></span>
+                            <div>
+                                <div class="fw-semibold">Quick Links</div>
+                                <small class="text-muted">Jump to common tasks</small>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('new_chat') }}" class="btn btn-outline-primary btn-sm"><i
+                                    class="fas fa-plus me-2"></i>Start a new chat</a>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm"><i
+                                    class="fas fa-list me-2"></i>View conversations</a>
+                            <a href="{{ url_for('contact') }}" class="btn btn-outline-secondary btn-sm"><i
+                                    class="fas fa-envelope me-2"></i>Contact support</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container pb-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div id="docsSideNav" class="position-sticky docs-sidenav" style="top: 88px;">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <nav class="nav nav-pills flex-column" id="tocNav" data-bs-spy="scroll"
+                            data-bs-target="#docsSideNav">
+                            <a class="nav-link active" href="#onboarding"><i
+                                    class="fas fa-compass me-2"></i>Onboarding</a>
+                            <a class="nav-link" href="#user-guides"><i class="fas fa-user-astronaut me-2"></i>User
+                                Guides</a>
+                            <a class="nav-link" href="#tutorials"><i
+                                    class="fas fa-graduation-cap me-2"></i>Tutorials</a>
+                            <a class="nav-link" href="#in-app-help"><i class="fas fa-life-ring me-2"></i>In‑App Help</a>
+                            <a class="nav-link" href="#tips"><i class="fas fa-lightbulb me-2"></i>Tips & Best
+                                Practices</a>
+                            <a class="nav-link" href="#faq"><i class="fas fa-question-circle me-2"></i>FAQ</a>
+                        </nav>
+                        <hr class="toc-divider my-3" />
+                        <div class="small text-muted">Use the table of contents to jump between sections. Tooltips <i
+                                class="fas fa-info-circle text-secondary" data-bs-toggle="tooltip"
+                                title="Hover to learn more"></i> highlight key hints.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+
+            <section id="onboarding" class="anchor-offset mb-5">
+                <h2 class="h3 fw-bold mb-3"><i class="fas fa-compass text-primary me-2"></i>Onboarding</h2>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <span class="feature-icon bg-grad-1 me-3"><i class="fas fa-comments"></i></span>
+                                    <div>
+                                        <div class="fw-semibold">Start a Chat</div>
+                                        <small class="text-muted">Create a new conversation</small>
+                                    </div>
+                                </div>
+                                <ol class="mb-0 ps-3">
+                                    <li class="mb-2">Go to Dashboard → <span class="code-pill">New Mission</span> or
+                                        click <span class="code-pill">New Chat</span> in the chat sidebar.</li>
+                                    <li class="mb-2">Type your question or paste content to analyze.</li>
+                                    <li>Hit <span class="kbd">Enter</span> or click <i class="fas fa-paper-plane"></i>
+                                        to send.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <span class="feature-icon bg-grad-2 me-3"><i class="fas fa-file-upload"></i></span>
+                                    <div>
+                                        <div class="fw-semibold">Attach Files</div>
+                                        <small class="text-muted">Give the AI context</small>
+                                    </div>
+                                </div>
+                                <ul class="mb-0 ps-3">
+                                    <li>Click the <i class="fas fa-paperclip"></i> icon to attach images or PDFs.</li>
+                                    <li>Supported: png, jpg, jpeg, gif, webp, bmp, svg, pdf (≤ 16 MB each).</li>
+                                    <li>PDFs are auto‑parsed so the AI can read their text.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <span class="feature-icon bg-grad-3 me-3"><i class="fas fa-microphone"></i></span>
+                                    <div>
+                                        <div class="fw-semibold">Voice Mode</div>
+                                        <small class="text-muted">Hands‑free input + TTS</small>
+                                    </div>
+                                </div>
+                                <ul class="mb-0 ps-3">
+                                    <li>Click <i class="fas fa-microphone"></i> to dictate your message.</li>
+                                    <li>Requires a supported browser (best in Chrome/Edge).</li>
+                                    <li>Click <i class="fas fa-volume-up"></i> on AI messages to listen back.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3 callout">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Tip: Use the Dashboard’s <strong>Prompt Library</strong> for ready‑made ideas (Data Analysis,
+                    Research, Reports, and more).
+                </div>
+            </section>
+
+            <section id="user-guides" class="anchor-offset mb-5">
+                <h2 class="h3 fw-bold mb-3"><i class="fas fa-user-astronaut text-primary me-2"></i>User Guides</h2>
+
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h5 class="fw-semibold mb-2"><i class="fas fa-robot me-2 text-primary"></i>Chat Basics
+                                </h5>
+                                <ul class="mb-0 ps-3">
+                                    <li><strong>Context window:</strong> The AI considers the last messages in your chat
+                                        when replying.</li>
+                                    <li><strong>Markdown support:</strong> Format with headings, bullets, code blocks;
+                                        AI replies render Markdown.</li>
+                                    <li><strong>Search & manage:</strong> Rename, delete, and search chats from the
+                                        sidebar.</li>
+                                    <li><strong>Export:</strong> Download any chat as a PDF (keeps Markdown formatting).
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h5 class="fw-semibold mb-2"><i class="fas fa-users me-2 text-success"></i>Collaboration
+                                    & Sharing</h5>
+                                <ul class="mb-0 ps-3">
+                                    <li><strong>Invite collaborators:</strong> Owners can invite others. Invitees join
+                                        as <em>Editors</em>.</li>
+                                    <li><strong>View‑only share:</strong> Generate a secure link to share a read‑only
+                                        view of a chat.</li>
+                                    <li><strong>Roles:</strong> Owner can rename/delete; editors can send messages.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h5 class="fw-semibold mb-2"><i class="fas fa-file-alt me-2 text-warning"></i>Working
+                                    with Files</h5>
+                                <ul class="mb-2 ps-3">
+                                    <li>Attach multiple files; images will show a preview before sending.</li>
+                                    <li>PDF text is extracted and appended to your prompt to aid reasoning.</li>
+                                    <li>Uploaded files are stored under <code>/static/uploads</code>; avoid sensitive
+                                        data.</li>
+                                </ul>
+                                <div class="alert alert-warning p-2 mb-0"><i
+                                        class="fas fa-triangle-exclamation me-2"></i><strong>Security note:</strong>
+                                    Uploaded files may be accessible via direct links. Remove confidential data before
+                                    sharing.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h5 class="fw-semibold mb-2"><i class="fas fa-microphone-alt me-2 text-danger"></i>Voice
+                                    Mode</h5>
+                                <ul class="mb-2 ps-3">
+                                    <li>Click the mic to start/stop dictation. Grant microphone permission if prompted.
+                                    </li>
+                                    <li>Interim results appear as you speak; final text is committed on pause.</li>
+                                    <li>Use the speaker button on AI messages for text‑to‑speech playback.</li>
+                                </ul>
+                                <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Browser support
+                                    varies; Chrome/Edge provide best results.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tutorials" class="anchor-offset mb-5">
+                <h2 class="h3 fw-bold mb-3"><i class="fas fa-graduation-cap text-primary me-2"></i>Tutorials</h2>
+
+                <div class="accordion faq-accordion" id="tutorialsAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="tutOneHead">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#tutOne" aria-expanded="true" aria-controls="tutOne">
+                                How to start a chat
+                            </button>
+                        </h2>
+                        <div id="tutOne" class="accordion-collapse collapse show" aria-labelledby="tutOneHead"
+                            data-bs-parent="#tutorialsAccordion">
+                            <div class="accordion-body">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="step-num bg-primary text-white">1</div>
+                                    <div>
+                                        From the <strong>Dashboard</strong>, click <span class="code-pill">New
+                                            Mission</span> or in the chat sidebar click <span class="code-pill">New
+                                            Chat</span>.
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-start gap-3 mt-3">
+                                    <div class="step-num bg-primary text-white">2</div>
+                                    <div>
+                                        Type a clear prompt. Example prompts:
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-md-6">
+                                                <div class="p-2 border rounded">“Summarize this report and list key
+                                                    findings.”</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="p-2 border rounded">“Explain rocket propulsion like I’m new
+                                                    to aerospace.”</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-start gap-3 mt-3">
+                                    <div class="step-num bg-primary text-white">3</div>
+                                    <div>
+                                        Press <span class="kbd">Enter</span> or click <i
+                                            class="fas fa-paper-plane"></i>. Use <span
+                                            class="tip-badge badge rounded-pill bg-info text-dark">Like</span> / <span
+                                            class="tip-badge badge rounded-pill bg-danger">Dislike</span> to provide
+                                        feedback.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="tutTwoHead">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#tutTwo" aria-expanded="false" aria-controls="tutTwo">
+                                How to upload a file and ask questions about it
+                            </button>
+                        </h2>
+                        <div id="tutTwo" class="accordion-collapse collapse" aria-labelledby="tutTwoHead"
+                            data-bs-parent="#tutorialsAccordion">
+                            <div class="accordion-body">
+                                <ol class="ps-3">
+                                    <li>Click the <i class="fas fa-paperclip"></i> icon and select images or PDFs.</li>
+                                    <li>Verify the <em>preview</em> chips/images show before sending.</li>
+                                    <li>Ask targeted questions like:
+                                        <ul>
+                                            <li>“Extract the main conclusions from the attached PDF.”</li>
+                                            <li>“For the image, describe visible features and potential anomalies.”</li>
+                                        </ul>
+                                    </li>
+                                    <li>For large PDFs, ask for a structured summary first, then deep‑dive into
+                                        sections.</li>
+                                </ol>
+                                <div class="alert alert-secondary small mb-0"><i
+                                        class="fas fa-shield-alt me-2"></i>Remember: files are stored under
+                                    <code>/static/uploads</code>. Don’t upload confidential data.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="tutThreeHead">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#tutThree" aria-expanded="false" aria-controls="tutThree">
+                                How to use Voice Mode efficiently
+                            </button>
+                        </h2>
+                        <div id="tutThree" class="accordion-collapse collapse" aria-labelledby="tutThreeHead"
+                            data-bs-parent="#tutorialsAccordion">
+                            <div class="accordion-body">
+                                <ul class="ps-3 mb-0">
+                                    <li>Speak in short sentences and pause briefly to commit text.</li>
+                                    <li>If recognition stalls, click the mic to stop and start again.</li>
+                                    <li>Use the speaker button to listen to AI results when reviewing long answers.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="tutFourHead">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#tutFour" aria-expanded="false" aria-controls="tutFour">
+                                Collaboration, sharing, and exporting
+                            </button>
+                        </h2>
+                        <div id="tutFour" class="accordion-collapse collapse" aria-labelledby="tutFourHead"
+                            data-bs-parent="#tutorialsAccordion">
+                            <div class="accordion-body">
+                                <ul class="ps-3 mb-2">
+                                    <li>Invite collaborators from the chat header. They’ll join as
+                                        <strong>Editors</strong>.</li>
+                                    <li>Create a view‑only link to share a chat externally.</li>
+                                    <li>Use <strong>Export</strong> to download a PDF version of the conversation.</li>
+                                </ul>
+                                <div class="alert alert-info p-2 mb-0"><i class="fas fa-user-shield me-2"></i>Only chat
+                                    owners can rename/delete and generate share links.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="in-app-help" class="anchor-offset mb-5">
+                <h2 class="h3 fw-bold mb-3"><i class="fas fa-life-ring text-primary me-2"></i>In‑App Help</h2>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h5 class="fw-semibold mb-2">Where to get help</h5>
+                                <ul class="ps-3 mb-0">
+                                    <li>Open this page anytime via the <strong>Support</strong> link in the navbar.</li>
+                                    <li>Use the <a href="{{ url_for('contact') }}">Contact</a> form to reach the team
+                                        directly.</li>
+                                    <li>Ask the AI “How do I … in ISRO‑GPT?” for quick guidance in context.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h5 class="fw-semibold mb-2">Framing effective queries <i
+                                        class="fas fa-info-circle text-secondary" data-bs-toggle="tooltip"
+                                        title="Give context, set goals, specify format"></i></h5>
+                                <ul class="ps-3 mb-2">
+                                    <li><strong>Give context:</strong> Describe your goal and audience.</li>
+                                    <li><strong>Be specific:</strong> Ask for formats like bullets, tables, or steps.
+                                    </li>
+                                    <li><strong>Iterate:</strong> Refine by asking follow‑ups (e.g., “shorter”, “more
+                                        examples”).</li>
+                                </ul>
+                                <div class="small text-muted">Example: “Summarize the attached PDF for executives in 5
+                                    bullets, then propose 3 actions.”</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tips" class="anchor-offset mb-5">
+                <h2 class="h3 fw-bold mb-3"><i class="fas fa-lightbulb text-primary me-2"></i>Tips & Best Practices</h2>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h6 class="text-uppercase text-muted">Beginners</h6>
+                                <ul class="ps-3 mb-0">
+                                    <li>Start with the <strong>Prompt Library</strong> on the Dashboard.</li>
+                                    <li>Use <strong>Like/Dislike</strong> to tune results over time.</li>
+                                    <li>Prefer short, clear prompts and iterate.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100 card-hover">
+                            <div class="card-body">
+                                <h6 class="text-uppercase text-muted">Advanced</h6>
+                                <ul class="ps-3 mb-0">
+                                    <li>Attach source PDFs/images to ground answers.</li>
+                                    <li>Ask the model to show <em>assumptions</em> and cite sections from PDFs.</li>
+                                    <li>Use collaboration to co‑edit with teammates; export when final.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="faq" class="anchor-offset mb-4">
+                <h2 class="h3 fw-bold mb-3"><i class="fas fa-question-circle text-primary me-2"></i>Frequently Asked
+                    Questions</h2>
+                <div class="accordion faq-accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="q1h">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#q1" aria-expanded="true" aria-controls="q1">What file types and size
+                                limits are supported?</button>
+                        </h2>
+                        <div id="q1" class="accordion-collapse collapse show" aria-labelledby="q1h"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">Images: png, jpg, jpeg, gif, webp, bmp, svg; Documents: pdf. Max
+                                size per file: 16 MB.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="q2h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#q2" aria-expanded="false" aria-controls="q2">How do I share or
+                                collaborate on chats?</button>
+                        </h2>
+                        <div id="q2" class="accordion-collapse collapse" aria-labelledby="q2h"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">Owners can invite collaborators (Editors) and generate a
+                                view‑only share link from the chat header controls.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="q3h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#q3" aria-expanded="false" aria-controls="q3">Can the AI read my
+                                PDFs?</button>
+                        </h2>
+                        <div id="q3" class="accordion-collapse collapse" aria-labelledby="q3h"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">Yes. The app extracts text from PDFs and includes it in the AI
+                                prompt, and the files are also uploaded to the AI for multimodal reasoning.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="q4h">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#q4" aria-expanded="false" aria-controls="q4">Where can I get further
+                                help?</button>
+                        </h2>
+                        <div id="q4" class="accordion-collapse collapse" aria-labelledby="q4h"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">Use the <a href="{{ url_for('contact') }}">Contact</a> page to
+                                reach support, or ask the AI for product guidance in your current chat.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="text-end">
+                <a href="#" class="btn btn-outline-secondary"><i class="fas fa-arrow-up me-2"></i>Back to top</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+    const sections = Array.from(document.querySelectorAll('.anchor-offset'));
+    const navLinks = Array.from(document.querySelectorAll('#tocNav .nav-link'));
+    const opts = { rootMargin: '-50% 0px -50% 0px', threshold: 0.01 };
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                const id = '#' + e.target.id;
+                navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === id));
+            }
+        });
+    }, opts);
+    sections.forEach(s => obs.observe(s));
+</script>
+{% endblock %}
