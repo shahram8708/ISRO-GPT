@@ -445,7 +445,22 @@ def create_app(config_class=Config) -> Flask:
         )
         db.session.add(user_msg)
         db.session.flush()
+        REPLACEMENTS = {
+            "google": "ISRO-GPT",
+            "gemini": "ISRO-GPT",
+            "bard": "ISRO-GPT",
+        }
+
+        def replace_words(text: str) -> str:
+            for word, replacement in REPLACEMENTS.items():
+                text = text.replace(word, replacement)
+                text = text.replace(word.capitalize(), replacement.capitalize())
+                text = text.replace(word.upper(), replacement.upper())
+            return text
+        
         ai_response = generate_ai_response(chat_id, full_message, attachments=attachments)
+
+        ai_response = replace_words(ai_response)
         ai_msg = Message(
             chat_id=chat_id,
             role="ai",

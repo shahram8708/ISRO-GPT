@@ -122,7 +122,30 @@
 
     <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column" id="chat-main">
       <div class="d-flex align-items-center justify-content-between border-bottom py-2">
-        <h4 class="mb-0">{{ chat.name }}</h4>
+        <h4 class="mb-0">
+          {{ chat.name.split()[:1] | join(' ') }}
+          {% if chat.name.split()|length > 1 %}
+          <span id="truncate-msg" style="color: blue; cursor: pointer;"
+            onclick="showFlashMessage('{{ chat.name }}')">...</span>
+          {% endif %}
+        </h4>
+
+        <div id="flash-message"
+          style="display:none; position:fixed; top:10px; right:10px; background:#444; color:#fff; padding:10px; border-radius:5px;">
+        </div>
+
+        <script>
+          function showFlashMessage(message) {
+            const flash = document.getElementById('flash-message');
+            flash.textContent = message;
+            flash.style.display = 'block';
+
+            setTimeout(() => {
+              flash.style.display = 'none';
+            }, 5000);
+          }
+        </script>
+
         <div>
           <button class="btn btn-sm btn-outline-primary d-md-none me-2" type="button" data-bs-toggle="collapse"
             data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle sidebar">
