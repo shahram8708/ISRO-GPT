@@ -4,6 +4,8 @@ from flask import current_app
 import os
 import uuid
 from typing import List, Optional
+import base64
+import mimetypes
 from mistune import markdown
 from xhtml2pdf import pisa
 from io import BytesIO
@@ -76,49 +78,137 @@ def create_app(config_class=Config) -> Flask:
             .limit(5)
             .all()[::-1]
         )
-                
+
         client = genai.Client(api_key=current_app.config["GOOGLE_API_KEY"])
 
         try:
             google_search_tool = genai.types.Tool(google_search=genai.types.GoogleSearch())
             config = genai.types.GenerateContentConfig(tools=[google_search_tool])
         except Exception:
-            config = None 
+            config = None
 
-        chat = client.chats.create(model="gemini-2.5-flash-lite", config=config)
-
+        conversation: List[dict] = []
         for msg in history:
-            if msg.content and msg.role == "user":
-                chat.send_message(msg.content)
+            if msg.role not in {"user", "ai"}:
+                continue
 
-        uploaded_parts = []
-        if attachments:
-            for a in attachments:
-                try:
-                    gfile = client.files.upload(
-                        file=os.path.abspath(a["abs_path"]),
-                        config={"mime_type": a["mime_type"]} if a.get("mime_type") else None,
-                    )
-                    part = genai.types.Part.from_uri(
-                        file_uri=gfile.uri,
-                        mime_type=gfile.mime_type or a.get("mime_type") or "application/octet-stream",
-                    )
-                    uploaded_parts.append(part)
-                except Exception as e:
-                    current_app.logger.error("GenAI upload failed for %s: %s", a.get("abs_path"), e)
+            parts: List[dict] = []
+            if msg.content:
+                parts.append({"text": msg.content})
 
-        for p in uploaded_parts:
+            if msg.role == "user" and msg.file_path:
+                for stored_name in msg.file_path.split(","):
+                    stored_name = stored_name.strip()
+                    if not stored_name:
+                        continue
+                    stored_path = os.path.join(current_app.config["UPLOAD_FOLDER"], stored_name)
+                    if not os.path.exists(stored_path):
+                        current_app.logger.warning(
+                            "Stored attachment missing on disk for history replay: %s", stored_path
+                        )
+                        continue
+                    mime_type = mimetypes.guess_type(stored_path)[0] or "application/octet-stream"
+                    try:
+                        with open(stored_path, "rb") as previous_file:
+                            encoded = base64.b64encode(previous_file.read()).decode("utf-8")
+                        parts.append({
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": encoded,
+                            }
+                        })
+                    except Exception as exc:
+                        current_app.logger.error(
+                            "Failed to encode historical attachment %s: %s", stored_path, exc,
+                            exc_info=True,
+                        )
+
+            if parts:
+                conversation.append({
+                    "role": "user" if msg.role == "user" else "model",
+                    "parts": parts,
+                })
+
+        message_parts: List[dict] = []
+        if prompt:
+            message_parts.append({"text": prompt})
+
+        image_parts_count = 0
+        missing_attachments: List[str] = []
+
+        for attachment in attachments or []:
+            abs_path = attachment.get("abs_path")
+            if not abs_path or not os.path.exists(abs_path):
+                missing_attachments.append(attachment.get("name") or abs_path or "<unknown>")
+                continue
+
+            mime_type = (attachment.get("mime_type")
+                         or mimetypes.guess_type(abs_path)[0]
+                         or "application/octet-stream")
+
             try:
-                chat.send_message(p)
-            except Exception as e:
-                current_app.logger.error("Sending file part failed: %s", e)
+                with open(abs_path, "rb") as file_handle:
+                    encoded_data = base64.b64encode(file_handle.read()).decode("utf-8")
+
+                message_parts.append({
+                    "inline_data": {
+                        "mime_type": mime_type,
+                        "data": encoded_data,
+                    }
+                })
+
+                if mime_type.startswith("image/"):
+                    image_parts_count += 1
+            except Exception as exc:
+                current_app.logger.error(
+                    "Failed to prepare attachment '%s' for AI Model: %s", abs_path, exc,
+                    exc_info=True,
+                )
+
+        if missing_attachments:
+            current_app.logger.error(
+                "Attachments missing on disk and skipped: %s", ", ".join(missing_attachments)
+            )
+
+        if (attachments and not image_parts_count):
+            current_app.logger.warning(
+                "No image payload detected among provided attachments for chat %s."
+                " AI Model will receive only text and non-image files.",
+                chat_id,
+            )
+
+        if not message_parts:
+            message_parts.append({"text": " "})
+
+        conversation.append({
+            "role": "user",
+            "parts": message_parts,
+        })
+
+        request_payload = {
+            "model": "gemini-2.5-flash-lite",
+            "contents": conversation,
+        }
+        if config:
+            request_payload["config"] = config
 
         try:
-            response = chat.send_message(prompt or " ")
-        except Exception:
-            response = chat.send_message(genai.types.Part.from_text(text=prompt or " "))
+            response = client.models.generate_content(**request_payload)
+        except Exception as exc:
+            current_app.logger.error(
+                "AI Model request failed for chat %s: %s", chat_id, exc,
+                exc_info=True,
+            )
+            return "We hit an error talking to AI Model. Please try again."
 
-        return (getattr(response, "text", None) or "").strip() or "No response."
+        reply_text = getattr(response, "text", None) or getattr(response, "output_text", None)
+        if not reply_text:
+            current_app.logger.error(
+                "AI Model returned an empty response for chat %s. Raw payload: %s", chat_id, response
+            )
+            return "AI Model did not return any text."
+
+        return reply_text.strip() or "No response."
 
     @app.context_processor
     def inject_globals():
@@ -728,6 +818,18 @@ Message:
     def support():
         return render_template("support.html")
     
+    @app.route("/terms")
+    def terms():
+        return render_template("terms.html")
+
+    @app.route("/about")
+    def about():
+        return render_template("about.html")
+
+    @app.route("/privacy")
+    def privacy():
+        return render_template("privacy.html")
+
     with app.app_context():
         try:
             db.create_all()

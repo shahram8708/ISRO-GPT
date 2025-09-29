@@ -1,0 +1,607 @@
+{% extends "base.html" %}
+
+{% block title %}Terms & Conditions - ISRO-GPT{% endblock %}
+
+{% block head %}
+<style>
+    .hero-gradient {
+        background: radial-gradient(circle at top left, rgba(13, 110, 253, 0.18), rgba(13, 110, 253, 0)),
+            radial-gradient(circle at bottom right, rgba(32, 201, 151, 0.22), rgba(32, 201, 151, 0));
+        position: relative;
+        overflow: hidden;
+        border-radius: 2rem;
+    }
+
+    .hero-gradient::after,
+    .hero-gradient::before {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.8;
+        animation: float 16s ease-in-out infinite;
+    }
+
+    .hero-gradient::before {
+        width: 260px;
+        height: 260px;
+        top: -60px;
+        right: 10%;
+        background: rgba(13, 110, 253, 0.45);
+    }
+
+    .hero-gradient::after {
+        width: 220px;
+        height: 220px;
+        bottom: -80px;
+        left: 5%;
+        background: rgba(32, 201, 151, 0.35);
+        animation-delay: -6s;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+            transform: translate3d(15px, -15px, 0) scale(1.05);
+        }
+    }
+
+    .terms-badge {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(13, 110, 253, 0.1);
+        padding: 0.35rem 1rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: fadeUp 0.8s ease forwards;
+        opacity: 0;
+    }
+
+    .terms-badge i {
+        color: #0d6efd;
+        font-size: 1rem;
+    }
+
+    .hero-title {
+        animation: fadeUp 0.9s ease forwards;
+        opacity: 0;
+        animation-delay: 0.1s;
+    }
+
+    .hero-subtitle {
+        animation: fadeUp 1s ease forwards;
+        opacity: 0;
+        animation-delay: 0.2s;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(14px);
+        border-radius: 1.5rem;
+        border: 1px solid rgba(13, 110, 253, 0.08);
+        box-shadow: 0 2rem 3rem rgba(13, 110, 253, 0.1);
+        transition: transform 0.45s ease, box-shadow 0.45s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 2.5rem 4rem rgba(13, 110, 253, 0.12);
+    }
+
+    .toc-card li+li {
+        margin-top: 0.75rem;
+    }
+
+    .toc-card a {
+        color: #0d6efd;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .toc-card a span {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #6c757d;
+    }
+
+    .section-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(32, 201, 151, 0.12));
+        color: #0d6efd;
+        font-size: 1.45rem;
+        margin-bottom: 1rem;
+    }
+
+    .terms-section:not(:last-child) {
+        margin-bottom: 2.5rem;
+    }
+
+    .subsection-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .section-surface {
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 1.75rem;
+        border: 1px solid rgba(108, 117, 125, 0.1);
+        box-shadow: 0 1.5rem 3rem rgba(13, 110, 253, 0.06);
+        transition: transform 0.4s ease;
+    }
+
+    .section-surface:hover {
+        transform: translateY(-4px);
+    }
+
+    .policy-list li {
+        margin-bottom: 0.85rem;
+        position: relative;
+        padding-left: 1.75rem;
+    }
+
+    .policy-list li::before {
+        content: "\f111";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        top: 0.15rem;
+        font-size: 0.55rem;
+        color: #0d6efd;
+    }
+
+    .divider-gradient {
+        height: 1px;
+        margin: 4rem auto 3rem;
+        background: linear-gradient(90deg, rgba(13, 110, 253, 0), rgba(13, 110, 253, 0.35), rgba(13, 110, 253, 0));
+    }
+
+    .sticky-sidebar {
+        position: sticky;
+        top: 100px;
+    }
+
+    .back-to-top {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: #fff;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1.25rem 2.5rem rgba(13, 110, 253, 0.35);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px);
+        transition: all 0.35s ease;
+        z-index: 1050;
+    }
+
+    .back-to-top.is-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    @keyframes fadeUp {
+        from {
+            transform: translateY(24px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(38px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .animate-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @media (max-width: 992px) {
+        .hero-gradient {
+            border-radius: 1.5rem;
+        }
+
+        .sticky-sidebar {
+            position: static;
+            margin-bottom: 2rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .hero-gradient {
+            border-radius: 1rem;
+        }
+
+        .back-to-top {
+            right: 16px;
+            bottom: 24px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section id="top" class="container-lg py-5">
+    <div class="hero-gradient p-4 p-md-5 shadow-sm">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7 text-dark position-relative">
+                <div class="terms-badge">
+                    <i class="fas fa-scale-unbalanced"></i>
+                    Updated {{ last_updated | default('September 29, 2025') }}
+                </div>
+                <h1 class="display-5 fw-bold text-dark hero-title mt-3">Terms &amp; Conditions</h1>
+                <p class="lead text-dark hero-subtitle mb-4">
+                    Welcome to ISRO-GPT — an AI-powered knowledge assistant crafted to support MOSDAC users,
+                    researchers, and
+                    citizen scientists with trusted remote sensing intelligence and mission data insights.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="d-flex align-items-center bg-white bg-opacity-25 rounded-pill px-3 py-2 shadow-sm">
+                        <span class="badge bg-success bg-opacity-75 me-2"><i class="fas fa-robot"></i></span>
+                        AI-assisted discovery with human oversight
+                    </div>
+                    <div class="d-flex align-items-center bg-white bg-opacity-25 rounded-pill px-3 py-2 shadow-sm">
+                        <span class="badge bg-info bg-opacity-75 me-2"><i class="fas fa-shield-alt"></i></span>
+                        Secure and responsible research workflows
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="glass-card p-4 text-dark animate-on-scroll" data-animate>
+                    <h2 class="h5 fw-semibold text-primary mb-3"><i class="fas fa-circle-info me-2"></i>Quick Overview
+                    </h2>
+                    <p class="mb-0 text-muted">These Terms govern your use of the ISRO-GPT platform, mobile experience,
+                        API
+                        integrations, and associated services. By creating an account, initiating a chat, or submitting
+                        content, you
+                        agree to these Terms on behalf of yourself or the organization you represent.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="glass-card p-4 sticky-sidebar">
+                <h3 class="h5 fw-bold text-primary mb-3"><i class="fas fa-list-check me-2"></i>Contents</h3>
+                <ul class="list-unstyled mb-0 toc-card">
+                    <li><a href="#acceptance"><i class="fas fa-link"></i><span>1</span>Acceptance of Terms</a></li>
+                    <li><a href="#eligibility"><i class="fas fa-user-check"></i><span>2</span>Eligibility &amp;
+                            Account</a></li>
+                    <li><a href="#usage"><i class="fas fa-rocket"></i><span>3</span>User Commitments</a></li>
+                    <li><a href="#rights"><i class="fas fa-key"></i><span>4</span>Intellectual Property &amp; Rights</a>
+                    </li>
+                    <li><a href="#outputs"><i class="fas fa-comments"></i><span>5</span>AI Guidance &amp; Generated
+                            Content</a></li>
+                    <li><a href="#liability"><i class="fas fa-balance-scale"></i><span>6</span>Disclaimers &amp;
+                            Liability</a></li>
+                    <li><a href="#suspension"><i class="fas fa-ban"></i><span>7</span>Suspension &amp; Termination</a>
+                    </li>
+                    <li><a href="#law"><i class="fas fa-gavel"></i><span>8</span>Governing Law &amp; Disputes</a></li>
+                    <li><a href="#contact"><i class="fas fa-headset"></i><span>9</span>Contact &amp; Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div id="acceptance" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-handshake"></i></div>
+                <h2 class="h4 fw-bold mb-3">1. Acceptance of Terms</h2>
+                <div class="section-surface">
+                    <p class="mb-3 text-muted">ISRO-GPT is designed to make MOSDAC&apos;s satellite data, atmospheric
+                        analytics,
+                        and remote sensing documentation more conversational and actionable. By accessing the dashboard,
+                        initiating
+                        AI conversations, uploading analytical documents, or consuming generated outputs, you
+                        acknowledge that:</p>
+                    <ul class="policy-list mb-0">
+                        <li>You have reviewed and accepted these Terms &amp; Conditions, our Privacy Policy, and any
+                            feature-specific
+                            notices.</li>
+                        <li>You are authorized to provide the datasets or prompts submitted through ISRO-GPT and have
+                            obtained all
+                            necessary permissions.</li>
+                        <li>You will comply with applicable national space policies, MOSDAC data sharing norms, and
+                            export control
+                            regulations.</li>
+                        <li>Your continued use after updates to the Terms constitutes acceptance of the revised version.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="eligibility" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-id-card"></i></div>
+                <h2 class="h4 fw-bold mb-3">2. Eligibility &amp; Account Security</h2>
+                <div class="section-surface">
+                    <p class="text-muted">Eligible users include registered MOSDAC contributors, ISRO mission partners,
+                        research scholars, hackathon participants, and authorized citizen scientists above the age of
+                        18. When you
+                        create an account or access invitation-only spaces, you agree to:</p>
+                    <ul class="policy-list">
+                        <li>Provide accurate identity, affiliation, and contact information.</li>
+                        <li>Maintain confidentiality of login credentials, API tokens, and workspace links.</li>
+                        <li>Promptly notify the ISRO-GPT team at <a
+                                href="mailto:support@isrogpt.in">support@isrogpt.in</a> of any
+                            unauthorized access or suspected breach.</li>
+                        <li>Use multi-factor authentication when enabled and log out from shared devices.</li>
+                    </ul>
+                    <p class="mb-0 text-muted">We reserve the right to reject registrations, revoke access, or request
+                        additional verification to uphold platform integrity.</p>
+                </div>
+            </div>
+
+            <div id="usage" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-user-shield"></i></div>
+                <h2 class="h4 fw-bold mb-3">3. Acceptable Use &amp; User Commitments</h2>
+                <div class="section-surface">
+                    <p class="text-muted">ISRO-GPT empowers responsible innovation across atmospheric studies, disaster
+                        management, oceanography, and other remote sensing domains. To maintain a safe, collaborative
+                        environment,
+                        you agree to:</p>
+                    <ul class="policy-list">
+                        <li>Use the chatbot, PDF analyzer, and voice input strictly for lawful research, education, or
+                            operational
+                            objectives.</li>
+                        <li>Respect intellectual property and confidentiality obligations tied to MOSDAC datasets or
+                            third-party
+                            contributions.</li>
+                        <li>Refrain from transmitting malicious code, security exploits, or content that is defamatory,
+                            hateful, or
+                            invasive of privacy.</li>
+                        <li>Avoid reverse-engineering, stress-testing, or circumventing access controls of the ISRO-GPT
+                            services.</li>
+                        <li>Credit ISRO-GPT outputs appropriately in publications and validate critical insights through
+                            primary
+                            data sources.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="rights" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-lightbulb"></i></div>
+                <h2 class="h4 fw-bold mb-3">4. Ownership, Licenses &amp; Usage Rights</h2>
+                <div class="section-surface">
+                    <p class="text-muted">We celebrate the collaborative spirit of India&apos;s space community. Our
+                        intellectual
+                        property commitments include:</p>
+                    <ul class="policy-list">
+                        <li><strong>Platform IP:</strong> ISRO-GPT, its interface, branding, and proprietary models
+                            remain the
+                            exclusive property of the ISRO-GPT team.</li>
+                        <li><strong>User Inputs:</strong> You retain rights to the prompts, datasets, and annotations
+                            you upload while
+                            granting us a limited license to process them for delivering platform services.</li>
+                        <li><strong>Generated Insights:</strong> AI responses may be used within your organization,
+                            subject to MOSDAC
+                            data sharing policies and citation requirements.</li>
+                        <li><strong>Feedback:</strong> Suggestions or bug reports can be used to enhance the platform
+                            without
+                            obligation of attribution or compensation.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="outputs" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-comments-dollar"></i></div>
+                <h2 class="h4 fw-bold mb-3">5. AI Guidance, Accuracy &amp; Limitations</h2>
+                <div class="section-surface">
+                    <p class="text-muted">ISRO-GPT blends curated datasets, MOSDAC archives, and large language models
+                        to offer
+                        conversational intelligence. However:</p>
+                    <ul class="policy-list">
+                        <li>Responses are generated algorithmically and may include inaccuracies, outdated references,
+                            or incomplete
+                            interpretations.</li>
+                        <li>AI recommendations must be validated before mission-critical decisions, including satellite
+                            maneuvering,
+                            disaster response, or public dissemination.</li>
+                        <li>Uploaded documents undergo secure processing; sensitive or classified material should not be
+                            submitted
+                            without proper authorization.</li>
+                        <li>We may anonymize aggregated usage signals to tune performance and ensure fairness across
+                            languages.</li>
+                    </ul>
+                    <p class="mb-0 text-muted">The platform should complement, not replace, expert review by ISRO
+                        scientists and
+                        domain specialists.</p>
+                </div>
+            </div>
+
+            <div id="liability" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-scale-balanced"></i></div>
+                <h2 class="h4 fw-bold mb-3">6. Warranties, Liability &amp; Indemnity</h2>
+                <div class="section-surface">
+                    <p class="text-muted">ISRO-GPT is provided on an &quot;as is&quot; and &quot;as available&quot;
+                        basis. To the
+                        maximum extent permitted by law:</p>
+                    <ul class="policy-list">
+                        <li>We disclaim warranties regarding accuracy, availability, uninterrupted access, or fitness
+                            for a
+                            particular purpose.</li>
+                        <li>ISRO-GPT, its contributors, and affiliates are not liable for indirect, incidental, or
+                            consequential
+                            damages arising from platform usage.</li>
+                        <li>You agree to indemnify and hold harmless the ISRO-GPT team against claims resulting from
+                            misuse,
+                            unauthorized sharing, or violation of third-party rights.</li>
+                        <li>Our total liability for any claim shall not exceed the fees, if any, paid in the preceding
+                            twelve (12)
+                            months.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="suspension" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-user-lock"></i></div>
+                <h2 class="h4 fw-bold mb-3">7. Suspension, Termination &amp; Changes</h2>
+                <div class="section-surface">
+                    <p class="text-muted">We continually evolve ISRO-GPT to meet the expectations of researchers and
+                        innovators.
+                        Accordingly, we may:</p>
+                    <ul class="policy-list">
+                        <li>Modify, suspend, or discontinue platform features with reasonable notice where feasible.
+                        </li>
+                        <li>Restrict access to users who breach these Terms, share sensitive content without clearance,
+                            or compromise
+                            platform security.</li>
+                        <li>Retain backups of user interactions for compliance, monitoring, and improvement purposes.
+                        </li>
+                        <li>Issue updated Terms; material revisions will be highlighted through in-app notices or email
+                            alerts.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="law" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-landmark"></i></div>
+                <h2 class="h4 fw-bold mb-3">8. Governing Law &amp; Dispute Resolution</h2>
+                <div class="section-surface">
+                    <p class="text-muted">These Terms are governed by the laws of India. You agree that:</p>
+                    <ul class="policy-list">
+                        <li>Jurisdiction lies with the courts of Bengaluru, Karnataka, unless mandated otherwise by law
+                            or ISRO&apos;s
+                            internal policies.</li>
+                        <li>Disputes will first attempt resolution through good-faith negotiation or mediation
+                            facilitated by ISRO
+                            and the ISRO-GPT steering committee.</li>
+                        <li>Emergency injunctive relief may be sought to protect intellectual property or prevent
+                            unauthorized data
+                            disclosure.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="contact" class="terms-section animate-on-scroll" data-animate>
+                <div class="section-icon"><i class="fas fa-headset"></i></div>
+                <h2 class="h4 fw-bold mb-3">9. Contact, Feedback &amp; Support</h2>
+                <div class="section-surface">
+                    <p class="text-muted">For clarifications, compliance requests, or collaboration ideas, reach out to
+                        our
+                        support desk. We typically respond within one business day.</p>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-start">
+                                <span class="badge bg-primary rounded-circle me-3 p-3"><i
+                                        class="fas fa-envelope"></i></span>
+                                <div>
+                                    <p class="fw-semibold mb-1">Email</p>
+                                    <a href="mailto:support@isrogpt.in" class="text-muted">support@isrogpt.in</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-start">
+                                <span class="badge bg-success rounded-circle me-3 p-3"><i
+                                        class="fas fa-comments"></i></span>
+                                <div>
+                                    <p class="fw-semibold mb-1">Live Desk</p>
+                                    <a href="{{ url_for('support') }}" class="text-muted">Submit a support ticket</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-3 mb-0 text-muted">For data licensing or mission collaboration, contact the MOSDAC
+                        outreach team
+                        via <a href="mailto:outreach@mosdac.gov.in">outreach@mosdac.gov.in</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider-gradient"></div>
+
+<section class="container-lg pb-5">
+    <div class="glass-card p-4 p-md-5 animate-on-scroll" data-animate>
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <h2 class="h4 fw-bold text-primary mb-3">Building responsible space-tech intelligence together</h2>
+                <p class="mb-0 text-muted">Our mission is to make MOSDAC data more discoverable, interpretable, and
+                    actionable
+                    for scientists, students, and innovators. Thank you for shaping a future where AI accelerates
+                    India&apos;s space
+                    aspirations responsibly.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg rounded-pill shadow-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<a href="#top" class="back-to-top" aria-label="Back to top"><i class="fas fa-arrow-up"></i></a>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.2
+        });
+
+        document.querySelectorAll("[data-animate]").forEach(el => observer.observe(el));
+
+        const backToTop = document.querySelector(".back-to-top");
+        window.addEventListener("scroll", () => {
+            if (window.scrollY > 420) {
+                backToTop.classList.add("is-visible");
+            } else {
+                backToTop.classList.remove("is-visible");
+            }
+        });
+
+        backToTop.addEventListener("click", (event) => {
+            event.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
+    });
+</script>
+{% endblock %}

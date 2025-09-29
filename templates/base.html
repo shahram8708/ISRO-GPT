@@ -3,72 +3,179 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <title>{% block title %}ISRO-GPT{% endblock %}</title>
-  <meta name="title" content="{{ page_title | default('ISRO-GPT') }}">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="Content-Language" content="{{ page_language | default('en') }}">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover, maximum-scale=5">
+  <meta name="application-name" content="ISRO-GPT">
+  <meta name="apple-mobile-web-app-title" content="ISRO-GPT">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no, address=no, email=no">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0d6efd">
+  <title>{% block title %}{{ page_title | default('ISRO-GPT | AI Copilot for Space Research & Collaboration') }}{%
+    endblock %}</title>
+  <meta name="title" content="{{ page_title | default('ISRO-GPT | AI Copilot for Space Research & Collaboration') }}">
   <meta name="description"
-    content="{{ page_description | default('ISRO-GPT: AI-powered platform for chat, collaboration, and knowledge management. Start conversations, upload files, use voice input, and export results.') }}">
+    content="{{ page_description | default('ISRO-GPT is the AI copilot built for ISRO teams, researchers, and space enthusiasts to analyse MOSDAC datasets, automate documentation, and deliver mission-ready insights with secure collaboration tools.') }}">
   <meta name="keywords"
-    content="{{ page_keywords | default('ISRO-GPT, AI, chatbot, collaboration, PDF AI, voice AI, file upload AI, AI assistant, AI knowledge base, ISRO') }}">
+    content="{{ page_keywords | default('ISRO-GPT, space AI assistant, mission analytics platform, satellite data chatbot, MOSDAC AI, remote sensing insights, collaborative AI workspace, aerospace knowledge base, voice-enabled AI copilot, document intelligence') }}">
   <meta name="author" content="ISRO-GPT Team">
-  <meta name="robots" content="index, follow">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="canonical" href="{{ request.url }}">
+  <meta name="publisher" content="ISRO-GPT">
+  <meta name="subject" content="AI-powered collaboration and knowledge platform for ISRO and aerospace teams">
+  <meta name="category" content="Artificial Intelligence, Space Technologies, Productivity Tools">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <link rel="canonical" href="{{ page_canonical | default(request.url) }}">
+  <link rel="alternate" hreflang="{{ page_hreflang | default('en-IN') }}"
+    href="{{ page_hreflang_url | default(page_canonical | default(request.url)) }}">
+  <link rel="alternate" hreflang="x-default" href="{{ page_canonical | default(request.url) }}">
 
   <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ request.url }}">
-  <meta property="og:title" content="{{ page_title | default('ISRO-GPT') }}">
-  <meta property="og:description"
-    content="{{ page_description | default('ISRO-GPT: AI-powered platform for chat, collaboration, and knowledge management.') }}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
   <meta property="og:site_name" content="ISRO-GPT">
+  <meta property="og:locale" content="{{ page_locale | default('en_IN') }}">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:url" content="{{ page_canonical | default(request.url) }}">
+  <meta property="og:title"
+    content="{{ page_title | default('ISRO-GPT | AI Copilot for Space Research & Collaboration') }}">
+  <meta property="og:description"
+    content="{{ page_description | default('Deliver faster mission outcomes with ISRO-GPT—your secure AI copilot for satellite data discovery, document intelligence, and real-time team collaboration.') }}">
+  <meta property="og:image"
+    content="{{ page_og_image | default(url_for('static', filename='image/logo.png', _external=True)) }}">
+  <meta property="og:image:secure_url"
+    content="{{ page_og_image | default(url_for('static', filename='image/logo.png', _external=True)) }}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt"
+    content="{{ page_og_image_alt | default('ISRO-GPT AI assistant for mission-ready collaboration') }}">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="{{ request.url }}">
-  <meta name="twitter:title" content="{{ page_title | default('ISRO-GPT') }}">
+  <meta name="twitter:site" content="@ISROGPT">
+  <meta name="twitter:creator" content="@ISROGPT">
+  <meta name="twitter:domain" content="{{ request.host }}">
+  <meta name="twitter:url" content="{{ page_canonical | default(request.url) }}">
+  <meta name="twitter:title"
+    content="{{ page_title | default('ISRO-GPT | AI Copilot for Space Research & Collaboration') }}">
   <meta name="twitter:description"
-    content="{{ page_description | default('ISRO-GPT: AI-powered platform for chat, collaboration, and knowledge management.') }}">
-  <meta name="twitter:image" content="{{ url_for('static', filename='images/og-image.png', _external=True) }}">
+    content="{{ page_description | default('Deliver faster mission outcomes with ISRO-GPT—your secure AI copilot for satellite data discovery, document intelligence, and real-time team collaboration.') }}">
+  <meta name="twitter:image"
+    content="{{ page_twitter_image | default(url_for('static', filename='image/logo.png', _external=True)) }}">
+  <meta name="twitter:image:alt"
+    content="{{ page_twitter_image_alt | default('Preview of ISRO-GPT intelligent mission workspace') }}">
+  <meta name="twitter:label1" content="Use Cases">
+  <meta name="twitter:data1" content="Mission briefings, document Q&A, remote sensing analytics">
+  <meta name="twitter:label2" content="Key Features">
+  <meta name="twitter:data2" content="Chat with PDFs, multilingual voice, secure exports">
 
-  <meta name="theme-color" content="#0d6efd">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='image/logo.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='image/logo.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='image/logo.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='image/logo.png') }}" type="image/x-icon">
 
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "ISRO-GPT",
-  "url": "{{ request.url_root }}",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "{{ request.url_root }}search?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "ISRO-GPT",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "{{ url_for('static', filename='images/logo.png', _external=True) }}"
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{ request.url_root | trim('/') }}/#organization",
+      "name": "ISRO-GPT",
+      "url": "{{ request.url_root }}",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ url_for('static', filename='image/logo.png', _external=True) }}",
+        "width": 512,
+        "height": 512
+      },
+      "sameAs": [
+        "https://twitter.com/ISROGPT",
+        "https://www.facebook.com/ISROGPT",
+        "https://www.linkedin.com/company/isrogpt"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "{{ url_for('support', _external=True) }}",
+  "availableLanguage": ["English"],
+        "areaServed": "IN"
+      },
+      "brand": "ISRO-GPT",
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.url_root | trim('/') }}/#website",
+      "name": "ISRO-GPT",
+      "url": "{{ request.url_root }}",
+      "description": "ISRO-GPT is the AI copilot that helps space research teams discover insights, automate workflows, and collaborate securely across MOSDAC datasets and mission documentation.",
+      "publisher": {
+        "@id": "{{ request.url_root | trim('/') }}/#organization"
+      },
+      "inLanguage": "{{ page_language | default('en') }}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ request.url_root }}search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "{{ request.url_root | trim('/') }}/#breadcrumbs",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Dashboard",
+          "item": "{{ url_for('dashboard', _external=True) }}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Support",
+          "item": "{{ url_for('support', _external=True) }}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Contact",
+          "item": "{{ url_for('contact', _external=True) }}"
+        }
+      ]
+    },
+    {
+      "@type": "Service",
+      "@id": "{{ request.url_root | trim('/') }}/#service",
+      "name": "ISRO-GPT Intelligent Mission Support",
+      "description": "AI-powered collaboration, knowledge retrieval, and document intelligence tailored for ISRO missions and space research teams.",
+      "provider": {
+        "@id": "{{ request.url_root | trim('/') }}/#organization"
+      },
+      "serviceType": "AI Copilot for Space Research",
+      "areaServed": ["IN", "Global"],
+      "audience": {
+        "@type": "Audience",
+        "audienceType": ["ISRO Scientists", "Space Researchers", "Mission Analysts", "Academia"]
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "INR",
+        "availability": "https://schema.org/InStock",
+        "url": "{{ url_for('register', _external=True) }}"
+      },
+      "termsOfService": "{{ url_for('terms', _external=True) }}"
     }
-  }
-}
-</script>
-
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "ISRO-GPT",
-  "url": "{{ request.url_root }}",
-  "logo": "{{ url_for('static', filename='images/logo.png', _external=True) }}",
-  "sameAs": [
-    "https://twitter.com/ISROGPT",
-    "https://www.facebook.com/ISROGPT",
-    "https://www.linkedin.com/company/isrogpt"
   ]
 }
 </script>
-  <link rel="shortcut icon" href="{{ url_for('static', filename='image/logo.png') }}" type="image/x-icon">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -78,6 +185,12 @@
 
   {% block head %}{% endblock %}
 </head>
+<style>
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+</style>
 
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
@@ -101,7 +214,7 @@
           </li>
           <li class="nav-item">
             <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('contact') }}">
-              <i class="fas fa-envelope me-1"></i>Contact Us
+              <i class="fas fa-envelope me-1"></i>Contact
             </a>
           </li>
           <li class="nav-item">
@@ -109,10 +222,26 @@
               <i class="fas fa-book-open me-1"></i>Support
             </a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('about') }}">
+              <i class="fas fa-users me-1"></i>About
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('privacy') }}">
+              <i class="fas fa-user-shield me-1"></i>Policy
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('terms') }}">
+              <i class="fas fa-file-contract me-1"></i>Terms
+            </a>
+          </li>
+
           {% if current_user.is_authenticated %}
           <li class="nav-item">
             <a class="nav-link px-3 py-2 rounded mx-1 position-relative" href="{{ url_for('new_chat') }}">
-              <i class="fas fa-plus me-1"></i>New Chat
+              <i class="fas fa-plus me-1"></i>New
             </a>
           </li>
           {% if current_user.is_admin %}
@@ -172,6 +301,20 @@
   </div>
 
   <script>
+    let startY = 0;
+
+    document.addEventListener("touchstart", function (e) {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener("touchmove", function (e) {
+      const currentY = e.touches[0].clientY;
+
+      if (window.scrollY === 0 && currentY > startY) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
     document.addEventListener("DOMContentLoaded", function () {
       const alerts = document.querySelectorAll(".flash-alert");
       alerts.forEach((alert) => {

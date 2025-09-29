@@ -128,10 +128,6 @@
             data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle sidebar">
             <i class="fas fa-bars"></i>
           </button>
-          <a href="{{ url_for('delete_chat', chat_id=chat.id) }}" class="btn btn-sm btn-outline-danger me-2"
-            title="Delete">
-            <i class="fas fa-trash"></i>
-          </a>
           <a href="{{ url_for('invite_user', chat_id=chat.id) }}" class="btn btn-sm btn-outline-primary me-2"
             title="Invite Participants"><i class="fas fa-user-plus"></i></a>
           <a href="{{ url_for('export_chat', chat_id=chat.id) }}" class="btn btn-sm btn-outline-success me-2"
@@ -687,7 +683,7 @@
         });
         const data = await resp.json();
         if (data.success) {
-          location.href = '{{ url_for('dashboard') }}';
+          location.href = '{{ url_for('new_chat') }}';
         } else if (data.error) {
           alert(data.error);
         }

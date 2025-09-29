@@ -1,0 +1,690 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - ISRO-GPT{% endblock %}
+
+{% block head %}
+<style>
+    .privacy-hero {
+        position: relative;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.92), rgba(102, 16, 242, 0.85));
+        border-radius: 2rem;
+        overflow: hidden;
+        color: #fff;
+    }
+
+    .privacy-hero::after,
+    .privacy-hero::before {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        filter: blur(50px);
+        animation: drift 18s ease-in-out infinite;
+    }
+
+    .privacy-hero::before {
+        width: 220px;
+        height: 220px;
+        top: -80px;
+        right: 12%;
+    }
+
+    .privacy-hero::after {
+        width: 260px;
+        height: 260px;
+        bottom: -100px;
+        left: 10%;
+        animation-delay: -5s;
+    }
+
+    @keyframes drift {
+
+        0%,
+        100% {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+            transform: translate3d(-18px, 14px, 0) scale(1.07);
+        }
+    }
+
+    .privacy-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.45rem 1.1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .privacy-chip i {
+        font-size: 1rem;
+    }
+
+    .hero-metadata {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.75rem;
+    }
+
+    .hero-meta-card {
+        flex: 1 1 180px;
+        padding: 1rem 1.25rem;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 1rem;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .policy-card {
+        background: #ffffff;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        border: 1px solid rgba(13, 110, 253, 0.09);
+        box-shadow: 0 2rem 3rem rgba(13, 110, 253, 0.08);
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .policy-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 2.5rem 4rem rgba(102, 16, 242, 0.12);
+    }
+
+    .policy-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .data-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .data-badge {
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(13, 110, 253, 0.12);
+        color: #0d6efd;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .privacy-list li {
+        margin-bottom: 0.85rem;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .privacy-list i {
+        font-size: 1.1rem;
+        color: #0d6efd;
+        margin-top: 0.2rem;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background: rgba(13, 110, 253, 0.08);
+        color: #0d6efd;
+    }
+
+    .timeline-step {
+        position: relative;
+        padding-left: 2.5rem;
+    }
+
+    .timeline-step::before {
+        content: "";
+        position: absolute;
+        left: 1rem;
+        top: 0.25rem;
+        bottom: -0.25rem;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(13, 110, 253, 0), rgba(13, 110, 253, 0.4), rgba(13, 110, 253, 0));
+    }
+
+    .timeline-step::after {
+        content: "";
+        position: absolute;
+        left: 0.75rem;
+        top: 0.6rem;
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 50%;
+        background: #0d6efd;
+        box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.14);
+    }
+
+    .summary-banner {
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.1), rgba(32, 201, 151, 0.1));
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(13, 110, 253, 0.08);
+    }
+
+    .scroll-indicator {
+        width: 4px;
+        border-radius: 999px;
+        background: rgba(13, 110, 253, 0.12);
+        overflow: hidden;
+    }
+
+    .scroll-indicator span {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(180deg, rgba(13, 110, 253, 0.85), rgba(102, 16, 242, 0.75));
+        transform-origin: top;
+    }
+
+    .animate-reveal {
+        opacity: 0;
+        transform: translateY(36px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .animate-reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @media (max-width: 992px) {
+        .privacy-hero {
+            border-radius: 1.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .privacy-hero {
+            border-radius: 1rem;
+        }
+
+        .hero-meta-card {
+            flex: 1 1 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container-lg py-5">
+    <div class="privacy-hero p-4 p-md-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="privacy-chip"><i class="fas fa-shield-check"></i> Trusted privacy posture</span>
+                <h1 class="display-5 fw-bold mt-4 mb-3">Privacy Policy</h1>
+                <p class="lead text-white-50 mb-4">ISRO-GPT is committed to protecting the confidentiality, integrity,
+                    and
+                    availability of every artifact you explore, upload, or generate while engaging with MOSDAC knowledge
+                    assets.
+                    This Privacy Policy explains how we handle data across our web app, progressive experience, APIs,
+                    and support
+                    channels.</p>
+                <div class="hero-metadata">
+                    <div class="hero-meta-card">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span class="fw-semibold">Effective</span>
+                        </div>
+                        <p class="mb-0">January 15, 2024</p>
+                    </div>
+                    <div class="hero-meta-card">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            <span class="fw-semibold">Last Reviewed</span>
+                        </div>
+                        <p class="mb-0">{{ last_reviewed | default('September 29, 2025') }}</p>
+                    </div>
+                    <div class="hero-meta-card">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="fw-semibold">Jurisdiction</span>
+                        </div>
+                        <p class="mb-0">Government of India / ISRO Guidelines</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="summary-banner animate-reveal" data-reveal>
+                    <h2 class="h5 fw-semibold text-info mb-3"><i class="fas fa-lock me-2"></i>At a Glance</h2>
+                    <ul class="privacy-list mb-0">
+                        <li><i class="fas fa-database text-info"></i>
+                            <div>We collect only the data needed to deliver AI-augmented insights, manage access, and
+                                improve system
+                                performance.</div>
+                        </li>
+                        <li><i class="fas fa-user-secret text-info"></i>
+                            <div>Your documents remain encrypted in transit and at rest; we restrict access to
+                                authorized engineers
+                                supporting MOSDAC operations.</div>
+                        </li>
+                        <li><i class="fas fa-people-arrows text-info"></i>
+                            <div>We never sell personal information. Limited shares with ISRO units or accredited
+                                partners occur solely
+                                for mission enablement.</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="policy-card animate-reveal" data-reveal id="collection">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-layer-group me-2"></i>1. Data We Collect</h3>
+                <p class="text-muted">ISRO-GPT captures several categories of information to secure access, ensure
+                    personalized
+                    experiences, and uphold compliance with MOSDAC policies.</p>
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <div class="section border rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold text-dark"><i
+                                    class="fas fa-id-badge text-primary me-2"></i>Account
+                                Information</h4>
+                            <p class="small text-muted mb-2">Name, institutional email, affiliation, designation, and
+                                verification
+                                documents provided during onboarding.</p>
+                            <div class="data-badges">
+                                <span class="data-badge">Mandatory</span>
+                                <span class="data-badge">Encrypted</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="section border rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold text-dark"><i class="fas fa-gears text-primary me-2"></i>Usage
+                                Telemetry</h4>
+                            <p class="small text-muted mb-2">Timestamps, feature interactions, device/browser metadata,
+                                and heartbeat
+                                logs to maintain system reliability.</p>
+                            <div class="data-badges">
+                                <span class="data-badge">Aggregated</span>
+                                <span class="data-badge">Retention: 12M</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="section border rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold text-dark"><i
+                                    class="fas fa-file-alt text-primary me-2"></i>Uploaded Content</h4>
+                            <p class="small text-muted mb-2">PDFs, imagery annotations, mission briefs, and prompts
+                                supplied for AI
+                                processing within the MOSDAC scope.</p>
+                            <div class="data-badges">
+                                <span class="data-badge">User-Controlled</span>
+                                <span class="data-badge">Retention: Configurable</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="section border rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold text-dark"><i
+                                    class="fas fa-language text-primary me-2"></i>Conversational
+                                Inputs</h4>
+                            <p class="small text-muted mb-2">Chat prompts, voice transcripts, and AI responses stored
+                                for audit,
+                                improvement, and safety moderation.</p>
+                            <div class="data-badges">
+                                <span class="data-badge">Limited Access</span>
+                                <span class="data-badge">Retention: 18M</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="usage">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-chart-line me-2"></i>2. How We Use Information
+                </h3>
+                <p class="text-muted">Processing is based on legitimate interest, contractual commitments, and
+                    compliance with
+                    ISRO directives. Key purposes include:</p>
+                <ul class="privacy-list">
+                    <li><i class="fas fa-user-cog"></i>
+                        <div>Authenticating users, managing roles (researcher, admin, collaborator), and personalizing
+                            workspace
+                            content.</div>
+                    </li>
+                    <li><i class="fas fa-lightbulb"></i>
+                        <div>Enhancing AI relevance and reducing hallucinations through supervised fine-tuning and
+                            human-in-the-loop
+                            reviews.</div>
+                    </li>
+                    <li><i class="fas fa-satellite"></i>
+                        <div>Correlating usage patterns with MOSDAC mission timelines to prioritize new datasets and
+                            product
+                            enhancements.</div>
+                    </li>
+                    <li><i class="fas fa-shield"></i>
+                        <div>Detecting abuse, preventing data exfiltration, and enforcing fair use policies.</div>
+                    </li>
+                    <li><i class="fas fa-life-ring"></i>
+                        <div>Providing responsive support via chat, email, or integration with the MOSDAC helpdesk.
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="cookies">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-cookie-bite me-2"></i>3. Cookies &amp; Similar
+                    Technologies</h3>
+                <p class="text-muted">We balance usability with privacy. Our cookie usage includes:</p>
+                <div class="accordion accordion-flush" id="cookieAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="cookieOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#cookieCollapseOne" aria-expanded="true"
+                                aria-controls="cookieCollapseOne">
+                                Essential Session Cookies
+                            </button>
+                        </h2>
+                        <div id="cookieCollapseOne" class="accordion-collapse collapse show" aria-labelledby="cookieOne"
+                            data-bs-parent="#cookieAccordion">
+                            <div class="accordion-body text-muted">Maintain login state, CSRF protection, and safe
+                                navigation between
+                                dashboard, chat, and admin modules.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="cookieTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#cookieCollapseTwo" aria-expanded="false"
+                                aria-controls="cookieCollapseTwo">
+                                Analytics Tokens
+                            </button>
+                        </h2>
+                        <div id="cookieCollapseTwo" class="accordion-collapse collapse" aria-labelledby="cookieTwo"
+                            data-bs-parent="#cookieAccordion">
+                            <div class="accordion-body text-muted">Anonymized usage signals processed internally to
+                                gauge response
+                                speed, feature adoption, and model quality.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="cookieThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#cookieCollapseThree" aria-expanded="false"
+                                aria-controls="cookieCollapseThree">
+                                Preference Storage
+                            </button>
+                        </h2>
+                        <div id="cookieCollapseThree" class="accordion-collapse collapse" aria-labelledby="cookieThree"
+                            data-bs-parent="#cookieAccordion">
+                            <div class="accordion-body text-muted">Remembering language preferences, accessibility
+                                settings, and
+                                saved searches across sessions.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="third-parties">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-handshake-angle me-2"></i>4. Third-Party Services
+                </h3>
+                <p class="text-muted">ISRO-GPT integrates with trusted partners to strengthen mission readiness. When
+                    data is
+                    shared, it follows strict oversight:</p>
+                <ul class="privacy-list">
+                    <li><i class="fas fa-cloud"></i>
+                        <div>Government-approved cloud infrastructure providers hosting redundant, geo-fenced
+                            environments in India.</div>
+                    </li>
+                    <li><i class="fas fa-comments-dollar"></i>
+                        <div>Language and speech APIs to enhance multilingual conversations (processed through
+                            anonymized proxies).
+                        </div>
+                    </li>
+                    <li><i class="fas fa-user-tie"></i>
+                        <div>Accredited research partners participating in pilot studies under Non-Disclosure
+                            Agreements.</div>
+                    </li>
+                </ul>
+                <p class="small text-muted mb-0">Every integration undergoes security review, contractual safeguards,
+                    and
+                    periodic audits conducted by the ISRO-GPT security council.</p>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="security">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-shield-halved me-2"></i>5. Data Security &amp;
+                    Retention</h3>
+                <p class="text-muted">We adopt a defense-in-depth strategy aligned with CERT-In guidelines and
+                    ISRO&apos;s data
+                    protection standards:</p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="timeline-step p-3 bg-light rounded-4 h-100">
+                            <h4 class="h6 fw-semibold"><i class="fas fa-lock text-primary me-2"></i>Encryption</h4>
+                            <p class="small text-muted mb-0">TLS 1.3 for data in transit, AES-256 at rest, hardware
+                                security modules
+                                for key rotation.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="timeline-step p-3 bg-light rounded-4 h-100">
+                            <h4 class="h6 fw-semibold"><i class="fas fa-user-shield text-primary me-2"></i>Access
+                                Control</h4>
+                            <p class="small text-muted mb-0">Role-based access, just-in-time approvals, and continuous
+                                monitoring of
+                                privileged actions.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="timeline-step p-3 bg-light rounded-4 h-100">
+                            <h4 class="h6 fw-semibold"><i class="fas fa-database text-primary me-2"></i>Retention
+                                Hygiene</h4>
+                            <p class="small text-muted mb-0">Automatic purge policies aligned with mission guidelines;
+                                user-controlled
+                                deletions honored within 48 hours.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="timeline-step p-3 bg-light rounded-4 h-100">
+                            <h4 class="h6 fw-semibold"><i
+                                    class="fas fa-clipboard-check text-primary me-2"></i>Assessments</h4>
+                            <p class="small text-muted mb-0">Quarterly vulnerability scans, annual penetration tests,
+                                and security
+                                drills with CERT-In participation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="rights">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-user-shield me-2"></i>6. Your Rights &amp;
+                    Choices</h3>
+                <p class="text-muted">We honor the data rights available under Indian law and emerging digital personal
+                    data
+                    protection regulations:</p>
+                <ul class="privacy-list">
+                    <li><i class="fas fa-eye"></i>
+                        <div>Access your conversations, documents, and audit logs via the account dashboard.</div>
+                    </li>
+                    <li><i class="fas fa-pen"></i>
+                        <div>Request corrections to inaccurate or outdated profile attributes.</div>
+                    </li>
+                    <li><i class="fas fa-trash"></i>
+                        <div>Initiate deletion of uploaded files or chat history unless retention is legally required.
+                        </div>
+                    </li>
+                    <li><i class="fas fa-toggle-on"></i>
+                        <div>Opt in/out of research previews, beta experiments, or analytics tracking from the settings
+                            panel.</div>
+                    </li>
+                </ul>
+                <p class="small text-muted mb-0">Submit requests at <a
+                        href="mailto:privacy@isrogpt.in">privacy@isrogpt.in</a>
+                    and include verification details. We respond within 15 working days.</p>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="children">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-children me-2"></i>7. Children&apos;s Data</h3>
+                <p class="text-muted mb-0">ISRO-GPT is not directed to children under 18. We do not knowingly collect
+                    minors&apos;
+                    personal data. If you believe a child has registered, please notify us for prompt remediation.</p>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal id="changes">
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-arrows-rotate me-2"></i>8. Updates to This Policy
+                </h3>
+                <p class="text-muted mb-3">We review this policy at least twice a year or when significant features
+                    launch.
+                    Changes will be communicated through in-app banners or email notifications.</p>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="scroll-indicator flex-grow-1" aria-hidden="true">
+                        <span style="height: 0%;"></span>
+                    </div>
+                    <button class="btn btn-outline-light text-primary-emphasis border-0 shadow-sm" id="notifyBtn">
+                        <i class="fas fa-bell me-2"></i>Notify me about updates
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="policy-card animate-reveal" data-reveal>
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-question-circle me-2"></i>Frequently Asked</h3>
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faqCollapseOne" aria-expanded="false" aria-controls="faqCollapseOne">
+                                Do you train models on my private data?
+                            </button>
+                        </h2>
+                        <div id="faqCollapseOne" class="accordion-collapse collapse" aria-labelledby="faqOne"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">No. Fine-tuning occurs only on curated, masked
+                                datasets. Private
+                                workspaces remain isolated unless you explicitly opt into collaborative research
+                                cohorts.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faqCollapseTwo" aria-expanded="false" aria-controls="faqCollapseTwo">
+                                Where is data physically stored?
+                            </button>
+                        </h2>
+                        <div id="faqCollapseTwo" class="accordion-collapse collapse" aria-labelledby="faqTwo"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">Primary storage resides in ISRO-approved regions
+                                within India with
+                                encrypted backups replicated across disaster recovery zones.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faqCollapseThree" aria-expanded="false"
+                                aria-controls="faqCollapseThree">
+                                How can I report a vulnerability?
+                            </button>
+                        </h2>
+                        <div id="faqCollapseThree" class="accordion-collapse collapse" aria-labelledby="faqThree"
+                            data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-muted">Email security disclosures to <a
+                                    href="mailto:security@isrogpt.in">security@isrogpt.in</a> using the provided PGP
+                                key. You will receive a
+                                response within 72 hours.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="policy-card animate-reveal" data-reveal>
+                <h3 class="fw-bold text-primary mb-3"><i class="fas fa-hands-holding-circle me-2"></i>Data Subject
+                    Support</h3>
+                <p class="text-muted">Reach us for privacy concerns, escalation, or feedback:</p>
+                <ul class="list-unstyled">
+                    <li class="d-flex align-items-center gap-3 mb-3">
+                        <span class="badge bg-primary rounded-circle p-3"><i class="fas fa-envelope"></i></span>
+                        <div>
+                            <p class="fw-semibold mb-1">Email</p>
+                            <a href="mailto:privacy@isrogpt.in" class="text-muted">privacy@isrogpt.in</a>
+                        </div>
+                    </li>
+                    <li class="d-flex align-items-center gap-3 mb-3">
+                        <span class="badge bg-success rounded-circle p-3"><i class="fas fa-phone"></i></span>
+                        <div>
+                            <p class="fw-semibold mb-1">Helpline</p>
+                            <p class="mb-0 text-muted">+91 80 1234 5678 (Mon-Fri, 10am-6pm IST)</p>
+                        </div>
+                    </li>
+                    <li class="d-flex align-items-center gap-3">
+                        <span class="badge bg-info rounded-circle p-3"><i class="fas fa-file-signature"></i></span>
+                        <div>
+                            <p class="fw-semibold mb-1">Grievance Officer</p>
+                            <p class="mb-0 text-muted">Dr. A. Meera, MOSDAC Data Protection Cell</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="policy-card animate-reveal" data-reveal>
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <h2 class="h4 fw-bold text-primary mb-3">Transparency fuels trust across the ISRO community</h2>
+                <p class="mb-0 text-muted">We continuously iterate on governance, tooling, and safeguards so your
+                    discoveries
+                    remain protected from ideation to mission launch. Partner with us to elevate responsible AI for
+                    Indian space
+                    science.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('contact') }}" class="btn btn-outline-primary btn-lg rounded-pill"><i
+                        class="fas fa-paper-plane me-2"></i>Raise a privacy request</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.2
+        });
+
+        document.querySelectorAll("[data-reveal]").forEach(el => observer.observe(el));
+
+        const scrollIndicator = document.querySelector(".scroll-indicator span");
+        if (scrollIndicator) {
+            window.addEventListener("scroll", () => {
+                const docHeight = document.body.scrollHeight - window.innerHeight;
+                const scrolled = window.scrollY;
+                const progress = docHeight > 0 ? Math.min(1, scrolled / docHeight) : 0;
+                scrollIndicator.style.height = `${progress * 100}%`;
+            });
+        }
+
+        const notifyBtn = document.getElementById("notifyBtn");
+        if (notifyBtn) {
+            notifyBtn.addEventListener("click", () => {
+                notifyBtn.classList.toggle("btn-outline-primary");
+                notifyBtn.classList.toggle("btn-primary");
+                notifyBtn.innerHTML = '<i class="fas fa-check"></i> You will receive updates';
+                notifyBtn.disabled = true;
+            });
+        }
+    });
+</script>
+{% endblock %}

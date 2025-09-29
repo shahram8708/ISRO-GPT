@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+
+{% block title %}About ISRO-GPT{% endblock %}
+
+{% block head %}
+<style>
+    .about-hero {
+        position: relative;
+        background: radial-gradient(circle at 15% 20%, rgba(13, 110, 253, 0.28), transparent 55%),
+            radial-gradient(circle at 85% 30%, rgba(102, 16, 242, 0.22), transparent 60%),
+            linear-gradient(135deg, rgba(13, 110, 253, 0.95), rgba(32, 201, 151, 0.85));
+        border-radius: 2rem;
+        padding: 4rem 3rem;
+        overflow: hidden;
+        color: #fff;
+    }
+
+    .about-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("https://www.transparenttextures.com/patterns/cubes.png");
+        opacity: 0.08;
+        mix-blend-mode: overlay;
+    }
+
+    .glow-orb {
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.14);
+        filter: blur(40px);
+        animation: drift 14s ease-in-out infinite;
+    }
+
+    .glow-orb.one {
+        top: -60px;
+        right: 12%;
+    }
+
+    .glow-orb.two {
+        bottom: -70px;
+        left: 18%;
+        animation-delay: -4s;
+    }
+
+    @keyframes drift {
+
+        0%,
+        100% {
+            transform: translate(0, 0) scale(1);
+        }
+
+        50% {
+            transform: translate(22px, -18px) scale(1.05);
+        }
+    }
+
+    .mission-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        padding: 0.45rem 1.2rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .mission-list li {
+        display: flex;
+        gap: 0.9rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .mission-list i {
+        font-size: 1.25rem;
+        color: #20c997;
+    }
+
+    .feature-card {
+        background: #fff;
+        border-radius: 1.5rem;
+        border: 1px solid rgba(13, 110, 253, 0.1);
+        box-shadow: 0 1.5rem 3rem rgba(13, 110, 253, 0.08);
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.45s ease, box-shadow 0.45s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 2.2rem 4rem rgba(13, 110, 253, 0.12);
+    }
+
+    .feature-card::before {
+        content: "";
+        position: absolute;
+        top: -120px;
+        right: -60px;
+        width: 220px;
+        height: 220px;
+        background: radial-gradient(circle, rgba(13, 110, 253, 0.18), transparent 55%);
+        transform: rotate(25deg);
+    }
+
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.18), rgba(32, 201, 151, 0.18));
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #0d6efd;
+        margin-bottom: 1rem;
+    }
+
+    .impact-metric {
+        background: rgba(13, 110, 253, 0.08);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.4s ease;
+    }
+
+    .impact-metric:hover {
+        transform: translateY(-6px);
+    }
+
+    .impact-metric h3 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: #0d6efd;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2.5rem;
+    }
+
+    .timeline::before {
+        content: "";
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(13, 110, 253, 0), rgba(13, 110, 253, 0.45), rgba(13, 110, 253, 0));
+    }
+
+    .timeline-item {
+        position: relative;
+        padding: 1.5rem 1.5rem 1.5rem 2.5rem;
+        background: #fff;
+        border-radius: 1.25rem;
+        border: 1px solid rgba(13, 110, 253, 0.08);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1.5rem 3rem rgba(13, 110, 253, 0.06);
+    }
+
+    .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: -1.03rem;
+        top: 20px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #0d6efd;
+        box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.15);
+    }
+
+    .uniqueness-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.5rem;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(102, 16, 242, 0.12));
+        padding: 2.5rem;
+        border: 1px solid rgba(13, 110, 253, 0.08);
+    }
+
+    .uniqueness-card h3 {
+        font-size: 1.8rem;
+        font-weight: 800;
+    }
+
+    .contact-tile {
+        background: #fff;
+        border-radius: 1.5rem;
+        padding: 1.75rem;
+        border: 1px solid rgba(13, 110, 253, 0.1);
+        box-shadow: 0 1.5rem 3rem rgba(13, 110, 253, 0.08);
+        transition: transform 0.35s ease;
+    }
+
+    .contact-tile:hover {
+        transform: translateY(-6px);
+    }
+
+    .contact-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 110, 253, 0.12);
+        color: #0d6efd;
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+
+    .scroll-fade {
+        opacity: 0;
+        transform: translateY(36px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .scroll-fade.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @media (max-width: 992px) {
+        .about-hero {
+            border-radius: 1.5rem;
+            padding: 3rem 2.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .about-hero {
+            border-radius: 1rem;
+            padding: 2.5rem 1.75rem;
+        }
+
+        .feature-card,
+        .contact-tile {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container-lg py-5">
+    <div class="about-hero position-relative overflow-hidden">
+        <div class="glow-orb one"></div>
+        <div class="glow-orb two"></div>
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7 position-relative">
+                <span class="mission-chip"><i class="fas fa-satellite"></i> Empowering space intelligence</span>
+                <h1 class="display-4 fw-bold my-3">Accelerating MOSDAC knowledge with conversational AI</h1>
+                <p class="lead text-white-50">ISRO-GPT transforms complex satellite datasets, atmospheric intelligence,
+                    and
+                    mission reports into intuitive dialogues. Built during MOSDAC&apos;s Vikas Saptah Hackathon, our
+                    platform bridges
+                    scientists, students, and citizen innovators with secure, guided AI experiences tailor-made for
+                    Indian space
+                    research.</p>
+                <div class="d-flex flex-wrap gap-3 mt-4">
+                    <div class="badge bg-success bg-opacity-75 rounded-pill px-3 py-2"><i
+                            class="fas fa-robot me-2"></i>Hybrid
+                        LLM + domain curation</div>
+                    <div class="badge bg-info bg-opacity-75 rounded-pill px-3 py-2"><i
+                            class="fas fa-user-secret me-2"></i>Data
+                        residency in India</div>
+                    <div class="badge bg-warning bg-opacity-75 rounded-pill px-3 py-2"><i
+                            class="fas fa-waveform me-2"></i>Voice
+                        and PDF intelligence</div>
+                </div>
+            </div>
+            <div class="col-lg-5 position-relative">
+                <div class="feature-card scroll-fade" data-scroll>
+                    <div class="feature-icon"><i class="fas fa-compass"></i></div>
+                    <h2 class="h4 fw-semibold text-primary">Our Mission</h2>
+                    <p class="text-muted">To democratize access to ISRO&apos;s remote sensing universe by combining
+                        verified datasets,
+                        contextual knowledge graphs, and safety-first generative AI. We help researchers ask deeper
+                        questions,
+                        iterate faster, and amplify mission impact.</p>
+                    <ul class="mission-list text-white-75">
+                        <li><i class="fas fa-lightbulb"></i><span class="text-dark">Enable rapid hypotheses with
+                                dialogue-driven
+                                exploration.</span>
+                        </li>
+                        <li><i class="fas fa-people-group"></i><span class="text-dark">Boost collaboration between ISRO
+                                teams, academia,
+                                and citizen
+                                innovators.</span></li>
+                        <li><i class="fas fa-shield-alt"></i><span class="text-dark">Guard sensitive payload data
+                                through layered
+                                governance.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="impact-metric scroll-fade" data-scroll>
+                <h3>65K+</h3>
+                <p class="text-muted mb-0">Lines of MOSDAC documentation searchable in seconds</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="impact-metric scroll-fade" data-scroll>
+                <h3>40+</h3>
+                <p class="text-muted mb-0">Active research cohorts using ISRO-GPT for mission prep</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="impact-metric scroll-fade" data-scroll>
+                <h3>24x7</h3>
+                <p class="text-muted mb-0">AI copilots available for multilingual support</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="feature-card scroll-fade" data-scroll>
+                <div class="feature-icon"><i class="fas fa-layer-group"></i></div>
+                <h3 class="h4 fw-bold">Platform Foundations</h3>
+                <p class="text-muted">ISRO-GPT orchestrates curated knowledge pipelines to provide accuracy without
+                    compromising
+                    classified intelligence.</p>
+                <ul class="text-muted list-unstyled mt-3">
+                    <li class="mb-3 d-flex gap-3"><i
+                            class="fas fa-database text-primary mt-1"></i><span><strong>Knowledge
+                                Vault:</strong> Harmonized MOSDAC archives, mission logs, payload manuals, and outreach
+                            datasets.</span>
+                    </li>
+                    <li class="mb-3 d-flex gap-3"><i
+                            class="fas fa-language text-primary mt-1"></i><span><strong>Multimodal
+                                Interface:</strong> Chat, PDF understanding, and voice inputs with contextual
+                            hand-offs.</span></li>
+                    <li class="d-flex gap-3"><i class="fas fa-chart-pie text-primary mt-1"></i><span><strong>Insight
+                                Studio:</strong> Export dashboards, citations, and knowledge trails for
+                            reproducibility.</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="feature-card scroll-fade" data-scroll>
+                <div class="feature-icon"><i class="fas fa-rocket"></i></div>
+                <h3 class="h4 fw-bold">What Sets Us Apart</h3>
+                <p class="text-muted">Designed with ISRO&apos;s ethos, the platform ensures fidelity, ethics, and
+                    readiness.</p>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold"><i class="fas fa-helmet-safety text-primary me-2"></i>Safety
+                                Guardrails</h4>
+                            <p class="small text-muted mb-0">Human-in-the-loop oversight, classified data filters, and
+                                anomaly
+                                detection.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold"><i class="fas fa-language text-primary me-2"></i>Indian Languages
+                            </h4>
+                            <p class="small text-muted mb-0">Regional language prompts for inclusive science
+                                communication.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold"><i
+                                    class="fas fa-handshake-angle text-primary me-2"></i>Collaboration</h4>
+                            <p class="small text-muted mb-0">Shared workspaces for academia, start-ups, and ISRO
+                                innovators.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                            <h4 class="h6 fw-semibold"><i class="fas fa-chart-line text-primary me-2"></i>Impact
+                                Analytics</h4>
+                            <p class="small text-muted mb-0">Usage insights for mission leaders to prioritize feature
+                                rollouts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="uniqueness-card scroll-fade" data-scroll>
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-7">
+                <h3 class="mb-3">Vision 2026</h3>
+                <p class="text-muted mb-0">We envision ISRO-GPT as the go-to conversational layer for every MOSDAC data
+                    touchpoint— empowering Earth observation cohorts, climate resilience planners, and young explorers
+                    to co-create
+                    solutions for India&apos;s space-faring future.</p>
+            </div>
+            <div class="col-lg-5">
+                <ul class="list-unstyled text-muted mb-0">
+                    <li class="mb-3 d-flex gap-3"><i class="fas fa-graduation-cap text-primary mt-1"></i><span>Launch
+                            remote
+                            sensing learning packs for universities and Atal Tinkering Labs.</span></li>
+                    <li class="mb-3 d-flex gap-3"><i class="fas fa-globe text-primary mt-1"></i><span>Expand vernacular
+                            support
+                            across 12 Indian languages with MOSDAC subject matter experts.</span></li>
+                    <li class="d-flex gap-3"><i class="fas fa-network-wired text-primary mt-1"></i><span>Integrate with
+                            mission
+                            planning tools to streamline payload readiness workflows.</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <h2 class="h4 fw-bold mb-4">How far we&apos;ve come</h2>
+            <div class="timeline">
+                <div class="timeline-item scroll-fade" data-scroll>
+                    <h3 class="h6 fw-semibold text-primary mb-1">2023 — Conceptualization</h3>
+                    <p class="text-muted mb-0">Initiated during ideation sprints with MOSDAC scientists to map friction
+                        points in
+                        accessing remote sensing intelligence.</p>
+                </div>
+                <div class="timeline-item scroll-fade" data-scroll>
+                    <h3 class="h6 fw-semibold text-primary mb-1">2024 — Hackathon Launch</h3>
+                    <p class="text-muted mb-0">Built the first working prototype for MOSDAC Vikas Saptah Hackathon
+                        featuring chat,
+                        PDF analytics, and voice commands.</p>
+                </div>
+                <div class="timeline-item scroll-fade" data-scroll>
+                    <h3 class="h6 fw-semibold text-primary mb-1">2025 — Production Readiness</h3>
+                    <p class="text-muted mb-0">Scaled infrastructure, onboarded research cohorts, and introduced admin
+                        governance
+                        dashboards.</p>
+                </div>
+                <div class="timeline-item scroll-fade" data-scroll>
+                    <h3 class="h6 fw-semibold text-primary mb-1">2026 — Beyond</h3>
+                    <p class="text-muted mb-0">Roadmap includes mission simulations, data storytelling templates, and
+                        open APIs
+                        for partner ecosystems.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="feature-card scroll-fade" data-scroll>
+                <div class="feature-icon"><i class="fas fa-users"></i></div>
+                <h3 class="h4 fw-bold">Core Team &amp; Contributors</h3>
+                <p class="text-muted">ISRO-GPT thrives on a multidisciplinary crew aligning AI excellence with
+                    space-domain
+                    rigor.</p>
+                <ul class="list-unstyled text-muted">
+                    <li class="mb-3 d-flex gap-3"><i
+                            class="fas fa-user-astronaut text-primary mt-1"></i><span><strong>Mission
+                                Stewards:</strong> MOSDAC scientists validating payload intelligence and
+                            compliance.</span></li>
+                    <li class="mb-3 d-flex gap-3"><i class="fas fa-brain text-primary mt-1"></i><span><strong>AI
+                                Engineers:</strong>
+                            Crafting retrieval pipelines, safety filters, and multilingual experiences.</span></li>
+                    <li class="mb-3 d-flex gap-3"><i
+                            class="fas fa-users-gear text-primary mt-1"></i><span><strong>Design &amp;
+                                Research:</strong> Capturing user journeys from classrooms to command centers.</span>
+                    </li>
+                    <li class="d-flex gap-3"><i
+                            class="fas fa-hands-helping text-primary mt-1"></i><span><strong>Community
+                                Champions:</strong> Hackathon mentors, student innovators, and citizen scientists
+                            shaping releases.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="contact-tile scroll-fade" data-scroll>
+                <div class="contact-icon"><i class="fas fa-envelope-open-text"></i></div>
+                <h4 class="fw-semibold">Write to us</h4>
+                <p class="text-muted">Share partnerships, research invites, or feedback for the platform.</p>
+                <a href="mailto:hello@isrogpt.in" class="text-primary fw-semibold"><i
+                        class="fas fa-arrow-up-right-from-square me-2"></i>hello@isrogpt.in</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="contact-tile scroll-fade" data-scroll>
+                <div class="contact-icon"><i class="fas fa-location-dot"></i></div>
+                <h4 class="fw-semibold">Visit the lab</h4>
+                <p class="text-muted">ISRO-GPT Collaboration Studio, MOSDAC Campus, Ahmedabad, Gujarat.</p>
+                <a href="https://maps.app.goo.gl/" target="_blank" rel="noopener" class="text-primary fw-semibold"><i
+                        class="fas fa-map-marker-alt me-2"></i>View on Maps</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="contact-tile scroll-fade" data-scroll>
+                <div class="contact-icon"><i class="fas fa-headset"></i></div>
+                <h4 class="fw-semibold">Join the community</h4>
+                <p class="text-muted">Participate in open meetups, webinars, and remote sensing bootcamps.</p>
+                <div class="d-flex gap-3">
+                    <a href="https://www.linkedin.com/company/isrogpt" target="_blank" rel="noopener"
+                        class="btn btn-outline-primary rounded-pill px-3"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="https://twitter.com/ISROGPT" target="_blank" rel="noopener"
+                        class="btn btn-outline-primary rounded-pill px-3"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="{{ url_for('support') }}" class="btn btn-primary rounded-pill px-3"><i
+                            class="fas fa-message"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-lg pb-5">
+    <div class="feature-card text-center scroll-fade" data-scroll>
+        <div class="feature-icon mx-auto"><i class="fas fa-star"></i></div>
+        <h2 class="h3 fw-bold mb-3">Future-forward, inclusive, and grounded in science</h2>
+        <p class="text-muted mb-4">Together with MOSDAC and India&apos;s space community, we&apos;re reimagining how AI
+            can augment
+            research, education, and public engagement. Thank you for exploring ISRO-GPT.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg rounded-pill"><i
+                class="fas fa-arrow-left me-2"></i>Return to dashboard</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.2
+        });
+
+        document.querySelectorAll("[data-scroll]").forEach(el => observer.observe(el));
+    });
+</script>
+{% endblock %}
