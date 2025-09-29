@@ -979,9 +979,9 @@ def create_app(config_class=Config) -> Flask:
         
     @app.route("/setup_admin")
     def setup_admin():
-        username = "admin"
-        email = "admin@example.com"
-        password = "Admin@123" 
+        username = "ISRO GPT"
+        email = "gpt@isro.com"
+        password = "ISRO-GPT@6708" 
 
         try:
             user = User.query.filter((User.username == username) | (User.email == email)).first()
