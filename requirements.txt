@@ -14,3 +14,5 @@ gunicorn
 mistune
 xhtml2pdf
 flask_mail
+twilio
+requests

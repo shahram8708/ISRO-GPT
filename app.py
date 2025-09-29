@@ -3,9 +3,12 @@ from flask import current_app
 
 import os
 import uuid
-from typing import List, Optional
+import secrets
+import re
+from typing import Dict, List, Optional, Tuple
 import base64
 import mimetypes
+import requests
 from mistune import markdown
 from xhtml2pdf import pisa
 from io import BytesIO
@@ -45,6 +48,23 @@ from forms import RegistrationForm, LoginForm, ContactForm
 from models import User, Chat, Message, ChatParticipant, ShareLink
 from google import genai
 
+REPLACEMENTS = {
+    "google": "ISRO-GPT",
+    "gemini": "ISRO-GPT",
+    "bard": "ISRO-GPT",
+}
+
+
+def replace_words(text: str) -> str:
+    for word, replacement in REPLACEMENTS.items():
+        text = text.replace(word, replacement)
+        text = text.replace(word.capitalize(), replacement.capitalize())
+        text = text.replace(word.upper(), replacement.upper())
+    return text
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
+from twilio.twiml.messaging_response import MessagingResponse
+
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
@@ -61,6 +81,20 @@ def create_app(config_class=Config) -> Flask:
     migrate.init_app(app, db)
     mail = Mail(app) 
 
+    twilio_client: Optional[Client] = None
+    account_sid = app.config.get("TWILIO_ACCOUNT_SID")
+    auth_token = app.config.get("TWILIO_AUTH_TOKEN")
+    if account_sid and auth_token:
+        try:
+            twilio_client = Client(account_sid, auth_token)
+            app.extensions["twilio_client"] = twilio_client
+            app.logger.info("Twilio client initialized for WhatsApp messaging.")
+        except Exception as exc:
+            twilio_client = None
+            app.logger.error("Failed to initialize Twilio client: %s", exc, exc_info=True)
+    else:
+        app.logger.warning("Twilio credentials not provided; WhatsApp integration disabled.")
+
     login_manager.login_view = "login"
     login_manager.login_message_category = "info"
 
@@ -69,6 +103,98 @@ def create_app(config_class=Config) -> Flask:
             genai.configure(api_key=app.config["GOOGLE_API_KEY"])
         except Exception as exc:
             app.logger.error("Failed to configure AI Model: %s", exc)
+
+    def persist_bytes_to_uploads(file_bytes: bytes, original_filename: Optional[str], mime_type: Optional[str]) -> str:
+        if not file_bytes:
+            raise ValueError("Attachment payload is empty.")
+
+        safe_name = secure_filename(original_filename or "whatsapp_upload") or "whatsapp_upload"
+        base_name, ext = os.path.splitext(safe_name)
+        if not ext and mime_type:
+            guessed_ext = mimetypes.guess_extension(mime_type) or ""
+            ext = guessed_ext
+        if not ext:
+            ext = ""
+        unique_name = f"{uuid.uuid4().hex}_{base_name}{ext}"
+        abs_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
+
+        try:
+            with open(abs_path, "wb") as destination:
+                destination.write(file_bytes)
+        except Exception as exc:
+            app.logger.error("Failed to persist attachment %s: %s", unique_name, exc, exc_info=True)
+            raise
+
+        return unique_name
+
+    def register_local_attachment(stored_name: str, mime_type: Optional[str]) -> Tuple[Dict[str, str], str]:
+        abs_path = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
+        resolved_mime = mime_type or mimetypes.guess_type(abs_path)[0] or "application/octet-stream"
+        ext = stored_name.rsplit(".", 1)[1].lower() if "." in stored_name else ""
+        extracted_text = ""
+
+        if ext == "pdf":
+            try:
+                with pdfplumber.open(abs_path) as pdf:
+                    for page_num, page in enumerate(pdf.pages, start=1):
+                        page_text = page.extract_text() or ""
+                        if page_text:
+                            extracted_text += f"\n\n--- Page {page_num} ---\n" + page_text
+            except Exception as exc:
+                app.logger.error("PDF extraction error for %s: %s", stored_name, exc, exc_info=True)
+
+        attachment_meta: Dict[str, str] = {
+            "abs_path": abs_path,
+            "mime_type": resolved_mime,
+            "name": stored_name,
+            "ext": ext,
+        }
+        return attachment_meta, extracted_text
+
+    def count_words(text: str) -> int:
+        """Return a simple word count for logging and guardrails."""
+        if not text:
+            return 0
+        return len(re.findall(r"\b[\w'-]+\b", text))
+
+    def sanitize_whatsapp_markdown(text: str) -> str:
+        """Coerce AI output into WhatsApp-compliant Markdown before delivery."""
+        if not text:
+            return ""
+
+        sanitized = text.replace("\r\n", "\n")
+
+        sanitized = re.sub(r"```(.*?)```", lambda m: m.group(1).strip(), sanitized, flags=re.DOTALL)
+        sanitized = re.sub(r"`([^`]+)`", r"\1", sanitized)
+
+        sanitized = re.sub(
+            r"^\s{0,3}#{1,6}\s*(.+)$",
+            lambda m: f"*{m.group(1).strip()}*",
+            sanitized,
+            flags=re.MULTILINE,
+        )
+
+        sanitized = re.sub(r"^\s{0,3}>\s*", "", sanitized, flags=re.MULTILINE)
+        sanitized = re.sub(r"^\s*[-:|]{2,}\s*$", "", sanitized, flags=re.MULTILINE)
+
+        sanitized = re.sub(
+            r"^\s*\|.+\|\s*$",
+            lambda m: " ".join(cell.strip() for cell in m.group(0).split("|") if cell.strip()),
+            sanitized,
+            flags=re.MULTILINE,
+        )
+
+        sanitized = re.sub(r"\*\*(.+?)\*\*", r"*\1*", sanitized)
+        sanitized = re.sub(r"__(.+?)__", r"_\1_", sanitized)
+        sanitized = re.sub(r"~~(.+?)~~", r"~\1~", sanitized)
+
+        sanitized = re.sub(r"^\s*[\*•]\s+", "- ", sanitized, flags=re.MULTILINE)
+        sanitized = re.sub(r"^\s*-\s{2,}", "- ", sanitized, flags=re.MULTILINE)
+
+        sanitized = re.sub(r"[ \t]{2,}", " ", sanitized)
+        sanitized = re.sub(r"\n{3,}", "\n\n", sanitized)
+
+        return sanitized.strip()
 
     def generate_ai_response(chat_id: int, prompt: str, attachments: Optional[List[dict]] = None) -> str:
         history = (
@@ -209,6 +335,95 @@ def create_app(config_class=Config) -> Flask:
             return "AI Model did not return any text."
 
         return reply_text.strip() or "No response."
+
+    def process_chat_interaction(
+        chat: Chat,
+        sender_user_id: Optional[int],
+        message_text: str,
+        attachments: List[Dict[str, str]],
+        extracted_text: str = "",
+        ai_directives: Optional[List[str]] = None,
+    ) -> Tuple[Dict[str, object], Dict[str, object], str]:
+        if chat is None:
+            raise ValueError("Chat context is required to process messages.")
+
+        safe_message_text = (message_text or "").strip()
+        stored_names = [att.get("name") for att in attachments if att.get("name")]
+        file_reference = ",".join(stored_names) if stored_names else None
+
+        try:
+            user_message = Message(
+                chat_id=chat.id,
+                user_id=sender_user_id,
+                role="user",
+                content=safe_message_text if safe_message_text else None,
+                file_path=file_reference,
+            )
+            db.session.add(user_message)
+            db.session.flush()
+
+            effective_prompt = safe_message_text
+            if extracted_text:
+                if effective_prompt:
+                    effective_prompt = f"{effective_prompt}\n\n{extracted_text}".strip()
+                else:
+                    effective_prompt = extracted_text.strip()
+
+            if ai_directives:
+                directive_text = "\n".join(dir_line.strip() for dir_line in ai_directives if dir_line.strip())
+                if directive_text:
+                    effective_prompt = (
+                        f"{directive_text}\n\n{effective_prompt}" if effective_prompt else directive_text
+                    )
+
+            ai_reply = generate_ai_response(chat.id, effective_prompt, attachments=attachments)
+            ai_reply = replace_words(ai_reply)
+
+            ai_message = Message(
+                chat_id=chat.id,
+                role="ai",
+                content=ai_reply,
+            )
+            db.session.add(ai_message)
+            db.session.commit()
+
+            return user_message.to_dict(), ai_message.to_dict(), ai_reply
+        except Exception as exc:
+            db.session.rollback()
+            app.logger.error("Failed to process chat interaction: %s", exc, exc_info=True)
+            raise
+
+    def get_or_create_whatsapp_resources(wa_number: str) -> Tuple[User, Chat]:
+        normalized = wa_number.replace("whatsapp:", "")
+        digits = "".join(ch for ch in normalized if ch.isdigit())
+        username = f"wa_{digits}" if digits else f"wa_{uuid.uuid4().hex[:8]}"
+        email = f"{username}@whatsapp.local"
+
+        user = User.query.filter_by(email=email).first()
+        created_user = False
+        if not user:
+            user = User(username=username[:80], email=email)
+            user.set_password(secrets.token_urlsafe(16))
+            db.session.add(user)
+            db.session.flush()
+            created_user = True
+
+        chat_name = f"WhatsApp {normalized}"
+        chat = Chat.query.filter_by(owner_id=user.id, name=chat_name).first()
+        if not chat:
+            chat = Chat(name=chat_name, owner_id=user.id)
+            db.session.add(chat)
+            db.session.flush()
+
+        participant = ChatParticipant.query.filter_by(chat_id=chat.id, user_id=user.id).first()
+        if not participant:
+            participant = ChatParticipant(chat_id=chat.id, user_id=user.id, role="owner")
+            db.session.add(participant)
+
+        if created_user:
+            app.logger.info("Created WhatsApp virtual user %s for %s", user.username, wa_number)
+
+        return user, chat
 
     @app.context_processor
     def inject_globals():
@@ -391,11 +606,14 @@ def create_app(config_class=Config) -> Flask:
         participant = ChatParticipant.query.filter_by(chat_id=chat_id, user_id=current_user.id).first()
         if not participant or participant.role not in {"owner", "editor"}:
             return jsonify({"error": "You do not have permission to send messages."}), 403
-        message_text = request.form.get("message", "").strip()
+        message_text = (request.form.get("message") or "").strip()
         files = request.files.getlist("files") if "files" in request.files else []
-        file_paths: List[str] = []
-        attachments: List[dict] = []
-        extracted_text = ""
+
+        if not message_text and not files:
+            return jsonify({"error": "Message cannot be empty."}), 400
+
+        attachments: List[Dict[str, str]] = []
+        extracted_segments: List[str] = []
 
         for file in files:
             if file.filename == "":
@@ -403,74 +621,171 @@ def create_app(config_class=Config) -> Flask:
             if not allowed_file(file.filename):
                 return jsonify({"error": f"Unsupported file type: {file.filename}"}), 400
 
-            filename = secure_filename(file.filename)
-            unique_name = f"{uuid.uuid4().hex}_{filename}"
-            file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
-            file.save(file_path)
-            file_paths.append(file_path)
-            db_file_url = f"/static/uploads/{unique_name}"
-            ext = filename.rsplit(".", 1)[1].lower()
-            mime = file.mimetype or {
-                "png":"image/png", "jpg":"image/jpeg","jpeg":"image/jpeg",
-                "gif":"image/gif","webp":"image/webp","bmp":"image/bmp",
-                "svg":"image/svg+xml","pdf":"application/pdf"
-            }.get(ext, "application/octet-stream")
+            try:
+                file_bytes = file.read()
+            except Exception as exc:
+                app.logger.error("Failed to read uploaded file %s: %s", file.filename, exc, exc_info=True)
+                return jsonify({"error": f"Failed to read file {file.filename}."}), 400
 
-            attachments.append({
-                "abs_path": os.path.abspath(file_path),
-                "mime_type": mime,
-                "name": unique_name,
-                "ext": ext,
-            })
+            if not file_bytes:
+                continue
 
-            if ext == "pdf":
-                try:
-                    with pdfplumber.open(file_path) as pdf:
-                        for page_num, page in enumerate(pdf.pages, start=1):
-                            txt = page.extract_text() or ""
-                            if txt:
-                                extracted_text += f"\n\n--- Page {page_num} ---\n" + txt
-                except Exception as e:
-                    app.logger.error("PDF extraction error: %s", e)
+            try:
+                stored_name = persist_bytes_to_uploads(file_bytes, file.filename, file.mimetype)
+                attachment_meta, extracted_text_segment = register_local_attachment(stored_name, file.mimetype)
+                attachments.append(attachment_meta)
+                if extracted_text_segment:
+                    extracted_segments.append(extracted_text_segment)
+            except ValueError as exc:
+                return jsonify({"error": str(exc)}), 400
+            except Exception as exc:
+                app.logger.error("Failed to persist uploaded file %s: %s", file.filename, exc, exc_info=True)
+                return jsonify({"error": f"Failed to store file {file.filename}."}), 500
 
-        full_message = message_text
-        if extracted_text:
-            full_message = (message_text + "\n\n" + extracted_text).strip()
-        user_msg = Message(
-            chat_id=chat_id,
-            user_id=current_user.id,
-            role="user",
-            content=message_text if message_text else None,
-            file_path=",".join([f"{os.path.basename(p)}" for p in file_paths]) if file_paths else None,
-        )
-        db.session.add(user_msg)
-        db.session.flush()
-        REPLACEMENTS = {
-            "google": "ISRO-GPT",
-            "gemini": "ISRO-GPT",
-            "bard": "ISRO-GPT",
-        }
+        combined_extracted_text = "".join(extracted_segments)
 
-        def replace_words(text: str) -> str:
-            for word, replacement in REPLACEMENTS.items():
-                text = text.replace(word, replacement)
-                text = text.replace(word.capitalize(), replacement.capitalize())
-                text = text.replace(word.upper(), replacement.upper())
-            return text
-        
-        ai_response = generate_ai_response(chat_id, full_message, attachments=attachments)
+        try:
+            user_payload, ai_payload, _ = process_chat_interaction(
+                chat,
+                current_user.id,
+                message_text,
+                attachments,
+                combined_extracted_text,
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception:
+            return jsonify({"error": "Failed to send message."}), 500
 
-        ai_response = replace_words(ai_response)
-        ai_msg = Message(
-            chat_id=chat_id,
-            role="ai",
-            content=ai_response,
-        )
-        db.session.add(ai_msg)
-        db.session.commit()
         return jsonify({
-            "messages": [user_msg.to_dict(), ai_msg.to_dict()],
+            "messages": [user_payload, ai_payload],
         })
+
+    @app.route("/integrations/whatsapp", methods=["POST"])
+    @csrf.exempt
+    def whatsapp_webhook():
+        twilio_cfg_missing = not (app.config.get("TWILIO_ACCOUNT_SID") and app.config.get("TWILIO_AUTH_TOKEN") and app.config.get("TWILIO_WHATSAPP_NUMBER"))
+        messaging_response = MessagingResponse()
+
+        if twilio_cfg_missing:
+            app.logger.error("WhatsApp webhook invoked but Twilio credentials are missing.")
+            messaging_response.message("WhatsApp integration is not configured. Please contact support.")
+            return str(messaging_response), 503, {"Content-Type": "application/xml"}
+
+        from_number = request.form.get("From", "").strip()
+        body = request.form.get("Body", "")
+
+        if not from_number.startswith("whatsapp:"):
+            app.logger.warning("Received WhatsApp webhook with invalid sender: %s", from_number)
+            messaging_response.message("We could not identify your WhatsApp number. Please try again.")
+            return str(messaging_response), 400, {"Content-Type": "application/xml"}
+
+        try:
+            whatsapp_user, chat = get_or_create_whatsapp_resources(from_number)
+        except Exception as exc:
+            app.logger.error("Failed to prepare WhatsApp resources: %s", exc, exc_info=True)
+            db.session.rollback()
+            messaging_response.message("We could not start your chat session. Please try again later.")
+            return str(messaging_response), 500, {"Content-Type": "application/xml"}
+
+        media_count_value = request.form.get("NumMedia") or request.form.get("MediaCount") or "0"
+        attachments: List[Dict[str, str]] = []
+        extracted_segments: List[str] = []
+
+        try:
+            media_count = int(media_count_value)
+        except (TypeError, ValueError):
+            media_count = 0
+
+        account_sid = app.config.get("TWILIO_ACCOUNT_SID")
+        auth_token = app.config.get("TWILIO_AUTH_TOKEN")
+
+        for idx in range(media_count):
+            media_url = request.form.get(f"MediaUrl{idx}")
+            if not media_url:
+                continue
+            mime_type = request.form.get(f"MediaContentType{idx}")
+            original_filename = request.form.get(f"MediaFilename{idx}") or f"whatsapp_media_{idx}"
+
+            try:
+                media_response = requests.get(media_url, auth=(account_sid, auth_token), timeout=30)
+                media_response.raise_for_status()
+            except requests.RequestException as exc:
+                app.logger.error("Failed to download WhatsApp media %s: %s", media_url, exc, exc_info=True)
+                continue
+
+            try:
+                stored_name = persist_bytes_to_uploads(media_response.content, original_filename, mime_type)
+                attachment_meta, extracted_text_segment = register_local_attachment(stored_name, mime_type)
+                attachments.append(attachment_meta)
+                if extracted_text_segment:
+                    extracted_segments.append(extracted_text_segment)
+            except ValueError as exc:
+                app.logger.warning("Skipping empty media payload from %s: %s", from_number, exc)
+                continue
+            except Exception as exc:
+                app.logger.error("Failed to persist WhatsApp media from %s: %s", media_url, exc, exc_info=True)
+                continue
+
+        if not body and not attachments:
+            db.session.rollback()
+            messaging_response.message("We did not receive any content. Please send a message or attachment.")
+            return str(messaging_response), 200, {"Content-Type": "application/xml"}
+
+        combined_extracted_text = "".join(extracted_segments)
+
+        max_words = int(app.config.get("WHATSAPP_MAX_WORDS", 350) or 0)
+        max_chars = int(app.config.get("WHATSAPP_MAX_CHARACTERS", 1600) or 0)
+        if max_words <= 0:
+            max_words = 350
+        if max_chars <= 0:
+            max_chars = 1600
+        whatsapp_directives = [
+            f"IMPORTANT: Your reply must be a direct answer to the user query in no more than {max_words} words (approx {max_chars} characters).",
+            "Do NOT explain the limits or talk about word count. Just follow them silently.",
+            "Use only WhatsApp-supported markdown for formatting: *bold*, _italic_, ~strikethrough~, - bullets, or numbered lists.",
+            "Do NOT include unsupported markdown (headings, tables, code blocks).",
+            "Keep the reply concise, user-friendly, and error-free. If the user asks for something long, summarize instead of exceeding the limit.",
+        ]
+        try:
+            _, ai_payload, ai_reply = process_chat_interaction(
+                chat,
+                whatsapp_user.id,
+                body,
+                attachments,
+                combined_extracted_text,
+                ai_directives=whatsapp_directives,
+            )
+        except Exception as exc:
+            app.logger.error("Failed to generate AI reply for WhatsApp user %s: %s", from_number, exc, exc_info=True)
+            messaging_response.message("We hit an error processing your message. Please try again.")
+            return str(messaging_response), 500, {"Content-Type": "application/xml"}
+
+        word_count = count_words(ai_reply)
+        char_count = len(ai_reply or "")
+        if max_words and word_count > max_words:
+            app.logger.warning(
+                "WhatsApp AI reply exceeded word limit (limit_words=%s, actual_words=%s, user_body=%s)",
+                max_words,
+                word_count,
+                body,
+            )
+        if max_chars and char_count > max_chars:
+            app.logger.warning(
+                "WhatsApp AI reply exceeded character limit (limit_chars=%s, actual_chars=%s, user_body=%s)",
+                max_chars,
+                char_count,
+                body,
+            )
+
+        sanitized_reply = sanitize_whatsapp_markdown(ai_reply)
+        if not sanitized_reply.strip():
+            sanitized_reply = (ai_reply or "").strip()
+
+        outgoing = messaging_response.message()
+        outgoing.body(sanitized_reply)
+
+        return str(messaging_response), 200, {"Content-Type": "application/xml"}
 
     @app.route("/chat/rename/<int:chat_id>", methods=["POST"])
     @login_required

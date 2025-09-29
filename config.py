@@ -32,3 +32,9 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'eurr xxsx brxz anrz')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'multimosaic.help@gmail.com')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'multimosaic.help@gmail.com')
+
+    TWILIO_ACCOUNT_SID = "ACe22c004acbbbef75cec10cd919dbea35"
+    TWILIO_AUTH_TOKEN = "7e9ec87efd5a3d18d7f6d4e673b62632"
+    TWILIO_WHATSAPP_NUMBER = "+17153175873"
+    WHATSAPP_MAX_WORDS = int(os.environ.get("WHATSAPP_MAX_WORDS", 350))
+    WHATSAPP_MAX_CHARACTERS = int(os.environ.get("WHATSAPP_MAX_CHARACTERS", 1600))
