@@ -109,7 +109,7 @@
                   <div class="list-group-item border-0 px-0 py-2 mosdac-item d-flex align-items-start">
                     <i class="fas fa-file-alt text-info mt-1 me-2 small"></i>
                     <div class="flex-grow-1">
-                      <a href="https://mosdac.gov.in/" class="text-decoration-none" title="{{ update.title }}"
+                      <a href="{{ update.link }}" class="text-decoration-none" title="{{ update.title }}"
                         target="_blank">{{ update.title }}</a>
                       <small class="d-block text-muted">
                         {{ update.published_at or 'Latest update' }}
@@ -118,7 +118,7 @@
                         {% endif %}
                       </small>
                     </div>
-                    <a href="https://mosdac.gov.in/" target="_blank" class="btn btn-sm btn-outline-info ms-2"
+                    <a href="{{ update.link }}" target="_blank" class="btn btn-sm btn-outline-info ms-2"
                       aria-label="Open {{ update.title }}">
                       <i class="fas fa-external-link-alt"></i>
                     </a>
@@ -235,7 +235,7 @@
                 <div class="list-group-item border-0 px-0 py-2 d-flex align-items-start mosdac-item">
                   <span class="badge bg-primary me-2">{{ loop.index }}</span>
                   <div class="flex-grow-1">
-                    <a href="https://mosdac.gov.in/" class="text-decoration-none text-dark" target="_blank"
+                    <a href="{{ update.link }}" class="text-decoration-none text-dark" target="_blank"
                       rel="noopener" title="{{ update.title }}">{{ update.title }}</a>
                     <small class="d-block text-muted">
                       {{ update.published_at or 'Latest update' }}
@@ -244,7 +244,7 @@
                       {% endif %}
                     </small>
                   </div>
-                  <a href="https://mosdac.gov.in/" target="_blank" rel="noopener"
+                  <a href="{{ update.link }}" target="_blank" rel="noopener"
                     class="btn btn-sm btn-outline-danger ms-2" aria-label="Open {{ update.title }}">
                     <i class="fas fa-external-link-alt"></i>
                   </a>
