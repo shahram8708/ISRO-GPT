@@ -93,41 +93,42 @@
             <div
               class="card-header bg-info bg-gradient text-white border-0 d-flex justify-content-between align-items-center">
               <h6 class="mb-0 fw-semibold"><i class="fas fa-satellite-dish me-2"></i>MOSDAC Updates</h6>
-              <i class="fas fa-grip-vertical widget-handle text-white-50"></i>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-light" id="mosdac-refresh-btn" type="button"
+                  title="Refresh MOSDAC updates">
+                  <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                </button>
+                <i class="fas fa-grip-vertical widget-handle text-white-50"></i>
+              </div>
             </div>
             <div class="card-body">
-              <div class="mosdac-scroll" style="overflow-y: auto; overflow-x: auto;">
-                <div class="list-group list-group-flush">
-                  {% set mosdac_announcements = [
-                  {"title": "Seasonal Prediction of Post Monsoon Cyclones in NIO", "link": "https://mosdac.gov.in/",
-                  "date": "11-Sep-25", "size": "1020 KB"},
-                  {"title": "MOSDAC Satellite Data Download API", "link": "https://mosdac.gov.in/", "date": "13-Aug-25",
-                  "size": "550 KB"},
-                  {"title": "Release of NWCSAF Products", "link": "https://mosdac.gov.in/", "date": "12-Aug-25", "size":
-                  "1.23 MB"},
-                  {"title": "INSAT Product Version Information", "link": "https://mosdac.gov.in/", "date": "01-Sep-22",
-                  "size": "1.61 MB"}
-                  ] %}
-
-                  {% if mosdac_announcements %}
-                  {% for item in mosdac_announcements %}
+              <div class="prompt-scroll" style="max-height: 250px; overflow-y: auto;">
+                <div class="list-group list-group-flush" id="mosdac-updates-list">
+                  {% if mosdac_updates %}
+                  {% for update in mosdac_updates %}
                   <div class="list-group-item border-0 px-0 py-2 mosdac-item d-flex align-items-start">
                     <i class="fas fa-file-alt text-info mt-1 me-2 small"></i>
                     <div class="flex-grow-1">
-                      <a href="{{ item.link }}" class="text-decoration-none text-truncate" title="{{ item.title }}"
-                        target="_blank">{{ item.title }}</a>
-                      <small class="d-block text-muted">{{ item.date }} | {{ item.size }}</small>
+                      <a href="https://mosdac.gov.in/" class="text-decoration-none" title="{{ update.title }}"
+                        target="_blank">{{ update.title }}</a>
+                      <small class="d-block text-muted">
+                        {{ update.published_at or 'Latest update' }}
+                        {% if update.summary %}
+                        &mdash; {{ update.summary }}
+                        {% endif %}
+                      </small>
                     </div>
-                    <a href="{{ item.link }}" target="_blank" class="btn btn-sm btn-outline-info ms-2">
+                    <a href="https://mosdac.gov.in/" target="_blank" class="btn btn-sm btn-outline-info ms-2"
+                      aria-label="Open {{ update.title }}">
                       <i class="fas fa-external-link-alt"></i>
                     </a>
                   </div>
                   {% endfor %}
                   {% else %}
-                  <div class="text-center py-3 text-muted">
+                  <div class="text-center py-3 text-muted" data-placeholder="mosdac-empty">
                     <i class="fas fa-satellite-dish fa-2x mb-2 opacity-25"></i>
-                    <p class="small mb-0">No MOSDAC updates available</p>
-                    <small>Check back later for latest satellite and oceanographic data</small>
+                    <p class="small mb-0">No MOSDAC updates cached yet</p>
+                    <small>Click refresh to fetch the latest announcements</small>
                   </div>
                   {% endif %}
                 </div>
@@ -218,27 +219,48 @@
           <div class="card border-0 shadow-sm h-100 widget-card">
             <div
               class="card-header bg-danger bg-gradient text-white border-0 d-flex justify-content-between align-items-center">
-              <h6 class="mb-0 fw-semibold"><i class="fas fa-newspaper me-2"></i>ISRO Updates</h6>
-              <i class="fas fa-grip-vertical widget-handle text-white-50"></i>
+              <h6 class="mb-0 fw-semibold"><i class="fas fa-newspaper me-2"></i>Latest MOSDAC Highlights</h6>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-light" id="mosdac-refresh-btn-news" type="button"
+                  title="Refresh MOSDAC updates">
+                  <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                </button>
+                <i class="fas fa-grip-vertical widget-handle text-white-50"></i>
+              </div>
             </div>
             <div class="card-body">
-              <div class="list-group list-group-flush">
-                <div class="list-group-item border-0 px-0 py-2">
-                  <span class="badge bg-primary me-2">New</span>
-                  <small>Gaganyaan mission human rating completed</small>
+              <div class="list-group list-group-flush" id="mosdac-news-list">
+                {% if mosdac_updates %}
+                {% for update in mosdac_updates %}
+                <div class="list-group-item border-0 px-0 py-2 d-flex align-items-start mosdac-item">
+                  <span class="badge bg-primary me-2">{{ loop.index }}</span>
+                  <div class="flex-grow-1">
+                    <a href="https://mosdac.gov.in/" class="text-decoration-none text-dark" target="_blank"
+                      rel="noopener" title="{{ update.title }}">{{ update.title }}</a>
+                    <small class="d-block text-muted">
+                      {{ update.published_at or 'Latest update' }}
+                      {% if update.summary %}
+                      &mdash; {{ update.summary }}
+                      {% endif %}
+                    </small>
+                  </div>
+                  <a href="https://mosdac.gov.in/" target="_blank" rel="noopener"
+                    class="btn btn-sm btn-outline-danger ms-2" aria-label="Open {{ update.title }}">
+                    <i class="fas fa-external-link-alt"></i>
+                  </a>
                 </div>
-                <div class="list-group-item border-0 px-0 py-2">
-                  <span class="badge bg-success me-2">Update</span>
-                  <small>PSLV-C58 launched successfully</small>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-3 text-muted" data-placeholder="mosdac-news-empty">
+                  <i class="fas fa-satellite-dish fa-2x mb-2 opacity-25"></i>
+                  <p class="small mb-0">No MOSDAC highlights available</p>
+                  <small>Use refresh to pull the most recent announcements</small>
                 </div>
-                <div class="list-group-item border-0 px-0 py-2">
-                  <span class="badge bg-info me-2">Research</span>
-                  <small>New lunar data from Chandrayaan-3 analysis</small>
-                </div>
+                {% endif %}
               </div>
               <div class="text-center mt-3">
-                <a href="https://mosdac.gov.in/" class="btn btn-sm btn-outline-danger">
-                  <i class="fas fa-external-link-alt me-1"></i>View All Updates
+                <a href="https://mosdac.gov.in/" class="btn btn-sm btn-outline-danger" target="_blank" rel="noopener">
+                  <i class="fas fa-external-link-alt me-1"></i>Visit MOSDAC Portal
                 </a>
               </div>
             </div>
@@ -255,7 +277,7 @@
             <div class="card-body">
               <div class="timeline">
                 {% if chats %}
-                {% for chat in chats[:2] %}
+                {% for chat in chats[:6] %}
                 <div class="mb-3">
                   <div class="d-flex">
                     <div
@@ -657,6 +679,184 @@
         }
       }
 
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const mosdacRefreshButtons = [
+        document.getElementById('mosdac-refresh-btn'),
+        document.getElementById('mosdac-refresh-btn-news'),
+      ].filter(Boolean);
+      const mosdacUpdatesList = document.getElementById('mosdac-updates-list');
+      const mosdacNewsList = document.getElementById('mosdac-news-list');
+
+      function renderMosdacPlaceholder(target, message) {
+        if (!target) return;
+        target.innerHTML = '';
+        const placeholder = document.createElement('div');
+        placeholder.className = 'text-center py-3 text-muted';
+        placeholder.innerHTML = `
+          <i class="fas fa-satellite-dish fa-2x mb-2 opacity-25"></i>
+          <p class="small mb-0">${message}</p>
+          <small>Try refreshing again in a moment</small>
+        `;
+        target.appendChild(placeholder);
+      }
+
+      function buildMosdacItem(update, index) {
+        const item = document.createElement('div');
+        item.className = 'list-group-item border-0 px-0 py-2 mosdac-item d-flex align-items-start';
+
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-file-alt text-info mt-1 me-2 small';
+
+        const body = document.createElement('div');
+        body.className = 'flex-grow-1';
+
+        const link = document.createElement('a');
+        link.className = 'text-decoration-none';
+        link.href = update.link;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.title = update.title || 'MOSDAC update';
+        link.textContent = update.title || 'Untitled update';
+
+        const meta = document.createElement('small');
+        meta.className = 'd-block text-muted';
+        const published = update.published_at && update.published_at.trim()
+          ? update.published_at.trim()
+          : 'Latest update';
+        const summary = update.summary && update.summary.trim()
+          ? ` — ${update.summary.trim()}`
+          : '';
+        meta.textContent = `${published}${summary}`;
+
+        body.appendChild(link);
+        body.appendChild(meta);
+
+        const action = document.createElement('a');
+        action.className = 'btn btn-sm btn-outline-info ms-2';
+        action.href = update.link;
+        action.target = '_blank';
+        action.rel = 'noopener noreferrer';
+        action.setAttribute('aria-label', `Open ${update.title || 'MOSDAC update'}`);
+        action.innerHTML = '<i class="fas fa-external-link-alt"></i>';
+
+        item.appendChild(icon);
+        item.appendChild(body);
+        item.appendChild(action);
+
+        return item;
+      }
+
+      function buildMosdacNewsItem(update, index) {
+        const item = document.createElement('div');
+        item.className = 'list-group-item border-0 px-0 py-2 d-flex align-items-start mosdac-item';
+
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary me-2';
+        badge.textContent = index + 1;
+
+        const body = document.createElement('div');
+        body.className = 'flex-grow-1';
+
+        const link = document.createElement('a');
+        link.className = 'text-decoration-none text-dark';
+        link.href = update.link;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.title = update.title || 'MOSDAC highlight';
+        link.textContent = update.title || 'Untitled update';
+
+        const meta = document.createElement('small');
+        meta.className = 'd-block text-muted';
+        const published = update.published_at && update.published_at.trim()
+          ? update.published_at.trim()
+          : 'Latest update';
+        const summary = update.summary && update.summary.trim()
+          ? ` — ${update.summary.trim()}`
+          : '';
+        meta.textContent = `${published}${summary}`;
+
+        body.appendChild(link);
+        body.appendChild(meta);
+
+        const action = document.createElement('a');
+        action.className = 'btn btn-sm btn-outline-danger ms-2';
+        action.href = update.link;
+        action.target = '_blank';
+        action.rel = 'noopener noreferrer';
+        action.setAttribute('aria-label', `Open ${update.title || 'MOSDAC highlight'}`);
+        action.innerHTML = '<i class="fas fa-external-link-alt"></i>';
+
+        item.appendChild(badge);
+        item.appendChild(body);
+        item.appendChild(action);
+
+        return item;
+      }
+
+      function renderMosdacUpdates(updates) {
+        const normalized = Array.isArray(updates) ? updates.slice(0, 4) : [];
+
+        if (!normalized.length) {
+          renderMosdacPlaceholder(mosdacUpdatesList, 'No MOSDAC updates available right now');
+          renderMosdacPlaceholder(mosdacNewsList, 'No MOSDAC highlights available');
+          return;
+        }
+
+        if (mosdacUpdatesList) {
+          mosdacUpdatesList.innerHTML = '';
+          normalized.forEach((update, index) => {
+            mosdacUpdatesList.appendChild(buildMosdacItem(update, index));
+          });
+        }
+
+        if (mosdacNewsList) {
+          mosdacNewsList.innerHTML = '';
+          normalized.forEach((update, index) => {
+            mosdacNewsList.appendChild(buildMosdacNewsItem(update, index));
+          });
+        }
+      }
+
+      async function refreshMosdacUpdates(triggerBtn) {
+        if (triggerBtn) triggerBtn.disabled = true;
+        const icon = triggerBtn?.querySelector('i');
+        const previousClass = icon?.className;
+        if (icon) icon.className = 'fas fa-spinner fa-spin';
+
+        try {
+          const response = await fetch('/api/mosdac/refresh', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+            },
+            body: JSON.stringify({}),
+          });
+
+          if (!response.ok) {
+            throw new Error('Refresh failed');
+          }
+
+          const data = await response.json();
+          if (data?.updates) {
+            renderMosdacUpdates(data.updates);
+          } else {
+            renderMosdacPlaceholder(mosdacUpdatesList, 'Unable to parse MOSDAC updates');
+            renderMosdacPlaceholder(mosdacNewsList, 'Unable to parse MOSDAC highlights');
+          }
+        } catch (error) {
+          console.error(error);
+          renderMosdacPlaceholder(mosdacUpdatesList, 'Failed to refresh MOSDAC updates');
+          renderMosdacPlaceholder(mosdacNewsList, 'Failed to refresh MOSDAC highlights');
+        } finally {
+          if (icon && previousClass) icon.className = previousClass;
+          if (triggerBtn) triggerBtn.disabled = false;
+        }
+      }
+
+      mosdacRefreshButtons.forEach((button) => {
+        button.addEventListener('click', () => refreshMosdacUpdates(button));
+      });
     });
   </script>
   {% endblock %}

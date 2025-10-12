@@ -2,6 +2,7 @@ from __future__ import annotations
 from flask import current_app
 
 import os
+import json
 import uuid
 import secrets
 import re
@@ -45,7 +46,7 @@ from flask import session, jsonify
 from config import Config
 from extensions import db, login_manager, csrf, migrate
 from forms import RegistrationForm, LoginForm, ContactForm
-from models import User, Chat, Message, ChatParticipant, ShareLink
+from models import User, Chat, Message, ChatParticipant, ShareLink, MosdacUpdate
 from google import genai
 
 REPLACEMENTS = {
@@ -53,6 +54,14 @@ REPLACEMENTS = {
     "gemini": "ISRO-GPT",
     "bard": "ISRO-GPT",
 }
+
+MOSDAC_UPDATES_PROMPT = (
+    "Use the Google Search tool to browse https://www.mosdac.gov.in/ and identify the four most recent updates, "
+    "announcements, or notices published on the site. Return a JSON array with exactly four objects ordered from "
+    "newest to oldest. Each object must include keys: title (string), summary (string, under 280 characters), "
+    "link (absolute URL to the MOSDAC page for the update), and published_at (string date as shown on MOSDAC, or "
+    "empty string if unavailable). The response must contain only JSON without additional commentary."
+)
 
 
 def replace_words(text: str) -> str:
@@ -152,13 +161,11 @@ def create_app(config_class=Config) -> Flask:
         return attachment_meta, extracted_text
 
     def count_words(text: str) -> int:
-        """Return a simple word count for logging and guardrails."""
         if not text:
             return 0
         return len(re.findall(r"\b[\w'-]+\b", text))
 
     def sanitize_whatsapp_markdown(text: str) -> str:
-        """Coerce AI output into WhatsApp-compliant Markdown before delivery."""
         if not text:
             return ""
 
@@ -335,6 +342,90 @@ def create_app(config_class=Config) -> Flask:
             return "AI Model did not return any text."
 
         return reply_text.strip() or "No response."
+
+    def fetch_mosdac_updates_from_gemini() -> List[dict]:
+        if not current_app.config.get("GOOGLE_API_KEY"):
+            raise RuntimeError("GOOGLE_API_KEY is not configured.")
+
+        client = genai.Client(api_key=current_app.config["GOOGLE_API_KEY"])
+
+        try:
+            google_search_tool = genai.types.Tool(google_search=genai.types.GoogleSearch())
+            config = genai.types.GenerateContentConfig(tools=[google_search_tool])
+        except Exception:
+            config = None
+
+        request_payload = {
+            "model": "gemini-2.5-flash-lite",
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": MOSDAC_UPDATES_PROMPT}],
+                }
+            ],
+        }
+        if config:
+            request_payload["config"] = config
+
+        response = client.models.generate_content(**request_payload)
+        raw_text = getattr(response, "text", None) or getattr(response, "output_text", None)
+        if not raw_text:
+            raise ValueError("Gemini response did not include text output.")
+
+        cleaned = raw_text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.lstrip("`")
+            if cleaned.lower().startswith("json"):
+                cleaned = cleaned[4:]
+            cleaned = cleaned.strip("`").strip()
+
+        try:
+            payload = json.loads(cleaned)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Unable to parse Gemini MOSDAC payload: {exc}") from exc
+
+        if not isinstance(payload, list):
+            raise ValueError("Gemini MOSDAC payload must be a list of updates")
+
+        normalized: List[dict] = []
+        for idx, item in enumerate(payload[:4], start=1):
+            if not isinstance(item, dict):
+                continue
+            title = (item.get("title") or "").strip()
+            link = (item.get("link") or "").strip()
+            if not title or not link:
+                continue
+            summary = (item.get("summary") or "").strip()
+            published_at = (item.get("published_at") or "").strip()
+            normalized.append({
+                "title": title,
+                "summary": summary,
+                "link": link,
+                "published_at": published_at,
+                "position": idx,
+            })
+
+        if len(normalized) < 4:
+            raise ValueError("Gemini returned fewer than four MOSDAC updates")
+
+        return normalized
+
+    def replace_mosdac_updates(updates: List[dict]) -> List[MosdacUpdate]:
+        db.session.query(MosdacUpdate).delete(synchronize_session=False)
+        records: List[MosdacUpdate] = []
+        for update in updates[:4]:
+            record = MosdacUpdate(
+                title=update["title"],
+                summary=update.get("summary"),
+                link=update["link"],
+                position=update.get("position", len(records) + 1),
+                published_at=update.get("published_at"),
+            )
+            db.session.add(record)
+            records.append(record)
+
+        db.session.commit()
+        return records
 
     def process_chat_interaction(
         chat: Chat,
@@ -549,7 +640,29 @@ def create_app(config_class=Config) -> Flask:
                 .order_by(Chat.created_at.desc())
                 .all()
             )
-        return render_template("dashboard.html", chats=chats)
+        mosdac_updates = (
+            MosdacUpdate.query.order_by(MosdacUpdate.position.asc(), MosdacUpdate.id.asc()).all()
+        )
+        return render_template("dashboard.html", chats=chats, mosdac_updates=mosdac_updates)
+
+    @app.route("/api/mosdac/updates", methods=["GET"])
+    def api_mosdac_updates():
+        updates = (
+            MosdacUpdate.query.order_by(MosdacUpdate.position.asc(), MosdacUpdate.id.asc()).all()
+        )
+        return jsonify({"updates": [update.to_dict() for update in updates]})
+
+    @app.route("/api/mosdac/refresh", methods=["POST"])
+    def api_mosdac_refresh_updates():
+        try:
+            normalized = fetch_mosdac_updates_from_gemini()
+            records = replace_mosdac_updates(normalized)
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.error("Failed to refresh MOSDAC updates: %s", exc, exc_info=True)
+            return jsonify({"error": str(exc)}), 500
+
+        return jsonify({"updates": [record.to_dict() for record in records]})
 
     @app.route("/chat/new")
     @login_required
@@ -1167,6 +1280,24 @@ Message:
         except Exception as e:
             app.logger.error("Error creating database tables: %s", e)
 
+    @app.route("/api/mosdac/refresh", methods=["POST"])
+    @csrf.exempt
+    def api_refresh_mosdac():
+        try:
+            updates_payload = fetch_mosdac_updates_from_gemini()
+            records = replace_mosdac_updates(updates_payload)
+            return jsonify({
+                "updates": [record.to_dict() for record in records],
+                "count": len(records),
+            })
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.error("Failed to refresh MOSDAC updates: %s", exc, exc_info=True)
+            return jsonify({
+                "error": "Failed to refresh MOSDAC updates",
+                "details": str(exc),
+            }), 500
+        
     return app
 
 

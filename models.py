@@ -74,6 +74,28 @@ class Message(db.Model):
     def __repr__(self) -> str:
         return f"<Message {self.role} {'with file' if self.file_path else ''}>"
 
+
+class MosdacUpdate(db.Model):
+    __tablename__ = "mosdac_updates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(512), nullable=False)
+    summary = db.Column(db.Text, nullable=True)
+    link = db.Column(db.String(1024), nullable=False)
+    position = db.Column(db.Integer, nullable=False, default=1)
+    published_at = db.Column(db.String(64), nullable=True)
+    retrieved_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            "title": self.title,
+            "summary": self.summary,
+            "link": self.link,
+            "position": self.position,
+            "published_at": self.published_at,
+        }
+
+
 class ShareLink(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(64), unique=True, nullable=False)
