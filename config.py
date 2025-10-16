@@ -60,13 +60,13 @@ class Config:
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'multimosaic.help@gmail.com')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'eurr xxsx brxz anrz')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'multimosaic.help@gmail.com')
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'multimosaic.help@gmail.com')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'MAIL_DEFAULT_SENDER')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'ADMIN_EMAIL')
 
-    TWILIO_ACCOUNT_SID = "ACe22c004acbbbef75cec10cd919dbea35"
-    TWILIO_AUTH_TOKEN = "7e9ec87efd5a3d18d7f6d4e673b62632"
-    TWILIO_WHATSAPP_NUMBER = "+17153175873"
+    TWILIO_ACCOUNT_SID = "TWILIO_ACCOUNT_SID"
+    TWILIO_AUTH_TOKEN = "TWILIO_AUTH_TOKEN"
+    TWILIO_WHATSAPP_NUMBER = "TWILIO_WHATSAPP_NUMBER"
     WHATSAPP_MAX_WORDS = int(os.environ.get("WHATSAPP_MAX_WORDS", 350))
     WHATSAPP_MAX_CHARACTERS = int(os.environ.get("WHATSAPP_MAX_CHARACTERS", 1600))
