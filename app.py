@@ -47,21 +47,13 @@ from config import Config
 from extensions import db, login_manager, csrf, migrate
 from forms import RegistrationForm, LoginForm, ContactForm
 from models import User, Chat, Message, ChatParticipant, ShareLink, MosdacUpdate
-from google import genai
+from rag_pipeline import RAGPipeline, RAGPipelineError
 
 REPLACEMENTS = {
     "google": "ISRO-GPT",
     "gemini": "ISRO-GPT",
     "bard": "ISRO-GPT",
 }
-
-MOSDAC_UPDATES_PROMPT = (
-    "Use the Google Search tool to browse https://www.mosdac.gov.in/ and identify the four most recent updates, "
-    "announcements, or notices published on the site. Return a JSON array with exactly four objects ordered from "
-    "newest to oldest. Each object must include keys: title (string), summary (string, under 280 characters), "
-    "link (absolute URL to the MOSDAC page for the update), and published_at (string date as shown on MOSDAC, or "
-    "empty string if unavailable). The response must contain only JSON without additional commentary."
-)
 
 
 def replace_words(text: str) -> str:
@@ -107,11 +99,13 @@ def create_app(config_class=Config) -> Flask:
     login_manager.login_view = "login"
     login_manager.login_message_category = "info"
 
-    if app.config.get("GOOGLE_API_KEY"):
-        try:
-            genai.configure(api_key=app.config["GOOGLE_API_KEY"])
-        except Exception as exc:
-            app.logger.error("Failed to configure AI Model: %s", exc)
+    try:
+        rag_pipeline = RAGPipeline(app.config, logger=app.logger)
+        app.extensions["rag_pipeline"] = rag_pipeline
+        app.logger.info("RAG pipeline initialised successfully.")
+    except Exception as exc:
+        app.logger.error("Failed to initialise RAG pipeline: %s", exc, exc_info=True)
+        app.extensions["rag_pipeline"] = None
 
     def persist_bytes_to_uploads(file_bytes: bytes, original_filename: Optional[str], mime_type: Optional[str]) -> str:
         if not file_bytes:
@@ -203,174 +197,70 @@ def create_app(config_class=Config) -> Flask:
 
         return sanitized.strip()
 
-    def generate_ai_response(chat_id: int, prompt: str, attachments: Optional[List[dict]] = None) -> str:
-        history = (
+    def generate_ai_response(
+        chat_id: int,
+        prompt: str,
+        attachments: Optional[List[dict]] = None,
+    ) -> Tuple[str, List[Dict[str, str]]]:
+        history_messages = (
             Message.query
             .filter(Message.chat_id == chat_id)
             .order_by(Message.id.desc())
-            .limit(5)
+            .limit(6)
             .all()[::-1]
         )
 
-        client = genai.Client(api_key=current_app.config["GOOGLE_API_KEY"])
-
-        try:
-            google_search_tool = genai.types.Tool(google_search=genai.types.GoogleSearch())
-            config = genai.types.GenerateContentConfig(tools=[google_search_tool])
-        except Exception:
-            config = None
-
-        conversation: List[dict] = []
-        for msg in history:
+        history_lines: List[str] = []
+        for msg in history_messages:
             if msg.role not in {"user", "ai"}:
                 continue
-
-            parts: List[dict] = []
-            if msg.content:
-                parts.append({"text": msg.content})
-
-            if msg.role == "user" and msg.file_path:
-                for stored_name in msg.file_path.split(","):
-                    stored_name = stored_name.strip()
-                    if not stored_name:
-                        continue
-                    stored_path = os.path.join(current_app.config["UPLOAD_FOLDER"], stored_name)
-                    if not os.path.exists(stored_path):
-                        current_app.logger.warning(
-                            "Stored attachment missing on disk for history replay: %s", stored_path
-                        )
-                        continue
-                    mime_type = mimetypes.guess_type(stored_path)[0] or "application/octet-stream"
-                    try:
-                        with open(stored_path, "rb") as previous_file:
-                            encoded = base64.b64encode(previous_file.read()).decode("utf-8")
-                        parts.append({
-                            "inline_data": {
-                                "mime_type": mime_type,
-                                "data": encoded,
-                            }
-                        })
-                    except Exception as exc:
-                        current_app.logger.error(
-                            "Failed to encode historical attachment %s: %s", stored_path, exc,
-                            exc_info=True,
-                        )
-
-            if parts:
-                conversation.append({
-                    "role": "user" if msg.role == "user" else "model",
-                    "parts": parts,
-                })
-
-        message_parts: List[dict] = []
-        if prompt:
-            message_parts.append({"text": prompt})
-
-        image_parts_count = 0
-        missing_attachments: List[str] = []
-
-        for attachment in attachments or []:
-            abs_path = attachment.get("abs_path")
-            if not abs_path or not os.path.exists(abs_path):
-                missing_attachments.append(attachment.get("name") or abs_path or "<unknown>")
+            if not msg.content:
                 continue
+            role_label = "User" if msg.role == "user" else "Assistant"
+            history_lines.append(f"{role_label}: {msg.content.strip()}")
 
-            mime_type = (attachment.get("mime_type")
-                         or mimetypes.guess_type(abs_path)[0]
-                         or "application/octet-stream")
+        history_text = "\n".join(history_lines[-6:]) if history_lines else None
 
-            try:
-                with open(abs_path, "rb") as file_handle:
-                    encoded_data = base64.b64encode(file_handle.read()).decode("utf-8")
+        pipeline: Optional[RAGPipeline] = current_app.extensions.get("rag_pipeline")
+        if not pipeline:
+            current_app.logger.error("RAG pipeline is not initialised; returning fallback message.")
+            return "Search pipeline is unavailable. Please try again later.", []
 
-                message_parts.append({
-                    "inline_data": {
-                        "mime_type": mime_type,
-                        "data": encoded_data,
-                    }
-                })
-
-                if mime_type.startswith("image/"):
-                    image_parts_count += 1
-            except Exception as exc:
-                current_app.logger.error(
-                    "Failed to prepare attachment '%s' for AI Model: %s", abs_path, exc,
-                    exc_info=True,
-                )
-
-        if missing_attachments:
-            current_app.logger.error(
-                "Attachments missing on disk and skipped: %s", ", ".join(missing_attachments)
-            )
-
-        if (attachments and not image_parts_count):
-            current_app.logger.warning(
-                "No image payload detected among provided attachments for chat %s."
-                " AI Model will receive only text and non-image files.",
-                chat_id,
-            )
-
-        if not message_parts:
-            message_parts.append({"text": " "})
-
-        conversation.append({
-            "role": "user",
-            "parts": message_parts,
-        })
-
-        request_payload = {
-            "model": "gemini-2.5-flash-lite",
-            "contents": conversation,
-        }
-        if config:
-            request_payload["config"] = config
+        question = (prompt or "").strip()
+        if not question:
+            question = "Provide a helpful response to the user based on the previous conversation."
 
         try:
-            response = client.models.generate_content(**request_payload)
-        except Exception as exc:
+            result = pipeline.run(question, history=history_text)
+        except RAGPipelineError as exc:
             current_app.logger.error(
-                "AI Model request failed for chat %s: %s", chat_id, exc,
-                exc_info=True,
+                "RAG pipeline error for chat %s: %s", chat_id, exc, exc_info=True
             )
-            return "We hit an error talking to AI Model. Please try again."
+            return "Unable to fetch search results. Please try again later.", []
 
-        reply_text = getattr(response, "text", None) or getattr(response, "output_text", None)
-        if not reply_text:
-            current_app.logger.error(
-                "AI Model returned an empty response for chat %s. Raw payload: %s", chat_id, response
-            )
-            return "AI Model did not return any text."
+        answer = result.answer.strip() or "No response."
+        return answer, result.sources
 
-        return reply_text.strip() or "No response."
+    def fetch_mosdac_updates_via_rag() -> List[dict]:
+        pipeline: Optional[RAGPipeline] = current_app.extensions.get("rag_pipeline")
+        if not pipeline:
+            raise RuntimeError("RAG pipeline is not configured.")
 
-    def fetch_mosdac_updates_from_gemini() -> List[dict]:
-        if not current_app.config.get("GOOGLE_API_KEY"):
-            raise RuntimeError("GOOGLE_API_KEY is not configured.")
-
-        client = genai.Client(api_key=current_app.config["GOOGLE_API_KEY"])
+        rag_query = (
+            "site:https://www.mosdac.gov.in latest updates announcements or notices from MOSDAC. "
+            "Return a JSON array with exactly four objects ordered newest to oldest. Each object must have keys "
+            "title (string), summary (string under 280 characters), link (URL), and published_at (string, allow empty). "
+            "Respond with JSON only."
+        )
 
         try:
-            google_search_tool = genai.types.Tool(google_search=genai.types.GoogleSearch())
-            config = genai.types.GenerateContentConfig(tools=[google_search_tool])
-        except Exception:
-            config = None
+            result = pipeline.run(rag_query)
+        except RAGPipelineError as exc:
+            raise RuntimeError("Unable to fetch MOSDAC updates via RAG.") from exc
 
-        request_payload = {
-            "model": "gemini-2.5-flash-lite",
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": MOSDAC_UPDATES_PROMPT}],
-                }
-            ],
-        }
-        if config:
-            request_payload["config"] = config
-
-        response = client.models.generate_content(**request_payload)
-        raw_text = getattr(response, "text", None) or getattr(response, "output_text", None)
+        raw_text = result.answer.strip()
         if not raw_text:
-            raise ValueError("Gemini response did not include text output.")
+            raise ValueError("RAG pipeline returned an empty response for MOSDAC updates.")
 
         cleaned = raw_text.strip()
         if cleaned.startswith("```"):
@@ -382,10 +272,10 @@ def create_app(config_class=Config) -> Flask:
         try:
             payload = json.loads(cleaned)
         except json.JSONDecodeError as exc:
-            raise ValueError(f"Unable to parse Gemini MOSDAC payload: {exc}") from exc
+            raise ValueError(f"Unable to parse MOSDAC updates JSON: {exc}") from exc
 
         if not isinstance(payload, list):
-            raise ValueError("Gemini MOSDAC payload must be a list of updates")
+            raise ValueError("MOSDAC updates payload must be a list of updates")
 
         normalized: List[dict] = []
         for idx, item in enumerate(payload[:4], start=1):
@@ -406,7 +296,7 @@ def create_app(config_class=Config) -> Flask:
             })
 
         if len(normalized) < 4:
-            raise ValueError("Gemini returned fewer than four MOSDAC updates")
+            raise ValueError("Search pipeline returned fewer than four MOSDAC updates")
 
         return normalized
 
@@ -434,7 +324,7 @@ def create_app(config_class=Config) -> Flask:
         attachments: List[Dict[str, str]],
         extracted_text: str = "",
         ai_directives: Optional[List[str]] = None,
-    ) -> Tuple[Dict[str, object], Dict[str, object], str]:
+    ) -> Tuple[Dict[str, object], Dict[str, object], str, List[Dict[str, str]]]:
         if chat is None:
             raise ValueError("Chat context is required to process messages.")
 
@@ -467,18 +357,38 @@ def create_app(config_class=Config) -> Flask:
                         f"{directive_text}\n\n{effective_prompt}" if effective_prompt else directive_text
                     )
 
-            ai_reply = generate_ai_response(chat.id, effective_prompt, attachments=attachments)
-            ai_reply = replace_words(ai_reply)
+            ai_reply_text, sources = generate_ai_response(
+                chat.id, effective_prompt, attachments=attachments
+            )
+            ai_reply_text = replace_words(ai_reply_text)
+
+            source_lines: List[str] = []
+            if sources:
+                for idx, src in enumerate(sources, start=1):
+                    title = (src.get("title") or src.get("url") or f"Source {idx}").strip()
+                    url = (src.get("url") or "").strip()
+                    if url:
+                        source_lines.append(f"{idx}. {title} - {url}")
+                    else:
+                        source_lines.append(f"{idx}. {title}")
+
+            final_reply = ai_reply_text
+            if source_lines:
+                final_reply = f"{ai_reply_text}\n\nSources:\n" + "\n".join(source_lines)
 
             ai_message = Message(
                 chat_id=chat.id,
                 role="ai",
-                content=ai_reply,
+                content=final_reply,
             )
             db.session.add(ai_message)
             db.session.commit()
 
-            return user_message.to_dict(), ai_message.to_dict(), ai_reply
+            ai_payload = ai_message.to_dict()
+            if sources:
+                ai_payload["sources"] = sources
+
+            return user_message.to_dict(), ai_payload, final_reply, sources
         except Exception as exc:
             db.session.rollback()
             app.logger.error("Failed to process chat interaction: %s", exc, exc_info=True)
@@ -655,7 +565,7 @@ def create_app(config_class=Config) -> Flask:
     @app.route("/api/mosdac/refresh", methods=["POST"])
     def api_mosdac_refresh_updates():
         try:
-            normalized = fetch_mosdac_updates_from_gemini()
+            normalized = fetch_mosdac_updates_via_rag()
             records = replace_mosdac_updates(normalized)
         except Exception as exc:
             db.session.rollback()
@@ -758,7 +668,7 @@ def create_app(config_class=Config) -> Flask:
         combined_extracted_text = "".join(extracted_segments)
 
         try:
-            user_payload, ai_payload, _ = process_chat_interaction(
+            user_payload, ai_payload, _, sources = process_chat_interaction(
                 chat,
                 current_user.id,
                 message_text,
@@ -770,9 +680,13 @@ def create_app(config_class=Config) -> Flask:
         except Exception:
             return jsonify({"error": "Failed to send message."}), 500
 
-        return jsonify({
+        response_payload = {
             "messages": [user_payload, ai_payload],
-        })
+        }
+        if sources:
+            response_payload["sources"] = sources
+
+        return jsonify(response_payload)
 
     @app.route("/integrations/whatsapp", methods=["POST"])
     @csrf.exempt
@@ -861,7 +775,7 @@ def create_app(config_class=Config) -> Flask:
             "Keep the reply concise, user-friendly, and error-free. If the user asks for something long, summarize instead of exceeding the limit.",
         ]
         try:
-            _, ai_payload, ai_reply = process_chat_interaction(
+            _, ai_payload, ai_reply, _sources = process_chat_interaction(
                 chat,
                 whatsapp_user.id,
                 body,
@@ -1284,7 +1198,7 @@ Message:
     @csrf.exempt
     def api_refresh_mosdac():
         try:
-            updates_payload = fetch_mosdac_updates_from_gemini()
+            updates_payload = fetch_mosdac_updates_via_rag()
             records = replace_mosdac_updates(updates_payload)
             return jsonify({
                 "updates": [record.to_dict() for record in records],

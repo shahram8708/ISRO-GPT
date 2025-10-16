@@ -20,7 +20,39 @@ class Config:
     
     ALLOWED_EXTENSIONS = {'png','jpg','jpeg','gif','webp','bmp','svg','pdf'}
 
-    GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "AIzaSyC1dSEI8aENjszrP9IcqZYX561QV8ASHa0")
+    SEARCH_MAX_RESULTS = int(os.environ.get("SEARCH_MAX_RESULTS", 8))
+    SEARCH_SAFE_MODE = os.environ.get("SEARCH_SAFE_MODE", "moderate")
+    SEARCH_REGION = os.environ.get("SEARCH_REGION", "wt-wt")
+    SEARCH_ALLOWED_LANGS = os.environ.get("SEARCH_ALLOWED_LANGS", "en")
+    SEARCH_CACHE_SIZE = int(os.environ.get("SEARCH_CACHE_SIZE", 32))
+
+    CONTENT_FETCH_TIMEOUT = float(os.environ.get("CONTENT_FETCH_TIMEOUT", 12))
+    CONTENT_FETCH_USER_AGENT = os.environ.get("CONTENT_FETCH_USER_AGENT", "ISRO-GPT-RAG/1.0")
+    RAG_MAX_CONTENT_CHARS = int(os.environ.get("RAG_MAX_CONTENT_CHARS", 9000))
+    RAG_CHUNK_TOKENS = int(os.environ.get("RAG_CHUNK_TOKENS", 360))
+    RAG_CHUNK_OVERLAP_TOKENS = int(os.environ.get("RAG_CHUNK_OVERLAP_TOKENS", 40))
+    RAG_TOP_K = int(os.environ.get("RAG_TOP_K", 5))
+    RAG_MAX_CONTEXT_PASSAGES = int(os.environ.get("RAG_MAX_CONTEXT_PASSAGES", 5))
+    RAG_CONTENT_CACHE_SIZE = int(os.environ.get("RAG_CONTENT_CACHE_SIZE", 32))
+    RAG_ANSWER_CACHE_SIZE = int(os.environ.get("RAG_ANSWER_CACHE_SIZE", 32))
+
+    LLM_BACKEND = os.environ.get("LLM_BACKEND", "llama_cpp")
+    DEFAULT_MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "mistral-7b-instruct.Q4_K_M.gguf")
+
+    LLAMA_CPP_MODEL_PATH = os.environ.get("LLAMA_CPP_MODEL_PATH", DEFAULT_MODEL_PATH)
+    LLAMA_CPP_N_CTX = int(os.environ.get("LLAMA_CPP_N_CTX", 4096))
+    LLAMA_CPP_N_THREADS = os.environ.get("LLAMA_CPP_N_THREADS")
+    OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "")
+    LLM_TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", 0.2))
+    LLM_MAX_OUTPUT_TOKENS = int(os.environ.get("LLM_MAX_OUTPUT_TOKENS", 512))
+    LLM_REQUEST_TIMEOUT = float(os.environ.get("LLM_REQUEST_TIMEOUT", 120))
+    LLM_SYSTEM_PROMPT = os.environ.get("LLM_SYSTEM_PROMPT")
+    LLM_MODEL_URL = os.environ.get(
+        "LLM_MODEL_URL",
+        "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf?download=1",
+    )
+    LLM_MODEL_SHA256 = os.environ.get("LLM_MODEL_SHA256")
 
     MESSAGES_PER_PAGE = int(os.environ.get("MESSAGES_PER_PAGE", 50))
 
